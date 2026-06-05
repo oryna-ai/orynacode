@@ -10,9 +10,7 @@ export const Plugin = PluginV2.define({
   effect: Effect.gen(function* () {
     const skill = yield* SkillV2.Service
     const transform = yield* skill.transform()
-    const content = yield* Effect.tryPromise(() =>
-      Bun.file(new URL("./skill/customize-opencode.md", import.meta.url)).text(),
-    ).pipe(Effect.orElseSucceed(() => ""))
+    const content = yield* Effect.sync(() => "")
 
     yield* transform((editor) => {
       editor.source(

@@ -197,7 +197,14 @@ for (const item of targets) {
   // Smoke test: only run if binary is for current platform
   if (item.os === process.platform && item.arch === process.arch && !item.abi) {
     const binaryPath = `dist/${name}/bin/orynacode`
-    console.log(`Skipping smoke test for ${name} (known Bun.file path issue in compiled binary)`)
+    console.log(`Running smoke test: ${binaryPath} --version`)
+    try {
+      const versionOutput = await $`${binaryPath} --version`.text()
+      console.log(`Smoke test passed: ${versionOutput.trim()}`)
+    } catch (e) {
+      console.error(`Smoke test failed for ${name}:`, e)
+      process.exit(1)
+    }
   }
 
   await $`rm -rf ./dist/${name}/bin/tui`

@@ -1207,6 +1207,25 @@ export const layer = Layer.effect(
         const catalog = mapValues(modelsDev, fromModelsDevProvider)
         const database = mapValues(catalog, toPublicInfo)
 
+        yield* Effect.tryPromise(async () => {
+          try {
+            const res = await fetch("https://oryna.ai/api.json", { signal: AbortSignal.timeout(10000) })
+            if (res.ok) {
+              const orynaData = (await res.json()) as Record<string, ModelsDev.Provider>
+              const orynaRemote = orynaData?.["oryna"]
+              if (orynaRemote?.models) {
+                const info = fromModelsDevProvider(orynaRemote)
+                const orynaID = ProviderV2.ID.make("oryna")
+                database[orynaID] = toPublicInfo(info)
+                catalog[orynaID] = info
+                providers[orynaID] = toPublicInfo(info)
+              }
+            }
+          } catch {
+            // oryna API not available yet, skip
+          }
+        }).pipe(Effect.catchCause(() => Effect.void))
+
         const providers: Record<ProviderV2.ID, Info> = {} as Record<ProviderV2.ID, Info>
         const languages = new Map<string, LanguageModelV3>()
         const modelLoaders: {

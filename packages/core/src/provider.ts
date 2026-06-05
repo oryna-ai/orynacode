@@ -8,6 +8,7 @@ export const ID = Schema.String.pipe(
   withStatics((schema) => ({
     // Well-known providers
     opencode: schema.make("opencode"),
+    oryna: schema.make("oryna"),
     anthropic: schema.make("anthropic"),
     openai: schema.make("openai"),
     google: schema.make("google"),

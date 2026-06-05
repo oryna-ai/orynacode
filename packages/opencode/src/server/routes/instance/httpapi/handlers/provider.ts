@@ -1,7 +1,6 @@
 import { ProviderAuth } from "@/provider/auth"
-import { Config } from "@/config/config"
-import { ModelsDev } from "@opencode-ai/core/models-dev"
 import { Provider } from "@/provider/provider"
+import type { ModelsDev } from "@opencode-ai/core/models-dev"
 
 import { mapValues } from "remeda"
 import { Effect, Schema } from "effect"
@@ -10,6 +9,28 @@ import { HttpApiBuilder } from "effect/unstable/httpapi"
 import { InstanceHttpApi } from "../api"
 import { ProviderAuthApiError } from "../groups/provider"
 import { ProviderV2 } from "@opencode-ai/core/provider"
+
+const ORYNA_MODELS_URL = "https://oryna.ai"
+const ORYNA_CACHE_TTL = 5 * 60 * 1000
+
+let _orynaCache: { data: Record<string, any>; at: number } | undefined
+
+async function loadOrynaModels(): Promise<Record<string, any>> {
+  if (_orynaCache && Date.now() - _orynaCache.at < ORYNA_CACHE_TTL) {
+    return _orynaCache.data
+  }
+  try {
+    const res = await fetch(`${ORYNA_MODELS_URL}/api.json`, {
+      signal: AbortSignal.timeout(10000),
+    })
+    if (res.ok) {
+      const data = await res.json()
+      _orynaCache = { data, at: Date.now() }
+      return data
+    }
+  } catch {}
+  return _orynaCache?.data ?? {}
+}
 
 function mapProviderAuthError<A, R>(self: Effect.Effect<A, ProviderAuth.Error, R>) {
   return self.pipe(
@@ -33,28 +54,54 @@ function mapProviderAuthError<A, R>(self: Effect.Effect<A, ProviderAuth.Error, R
 
 export const providerHandlers = HttpApiBuilder.group(InstanceHttpApi, "provider", (handlers) =>
   Effect.gen(function* () {
-    const cfg = yield* Config.Service
     const provider = yield* Provider.Service
     const svc = yield* ProviderAuth.Service
 
     const list = Effect.fn("ProviderHttpApi.list")(function* () {
-      const config = yield* cfg.get()
-      const all = yield* ModelsDev.Service.use((s) => s.get())
-      const disabled = new Set(config.disabled_providers ?? [])
-      const enabled = config.enabled_providers ? new Set(config.enabled_providers) : undefined
-      const filtered: Record<string, (typeof all)[string]> = {}
-      for (const [key, value] of Object.entries(all)) {
-        if ((enabled ? enabled.has(key) : true) && !disabled.has(key)) filtered[key] = value
+      const orynaEffect = Effect.tryPromise(() => loadOrynaModels()).pipe(
+        Effect.catchCause(() => Effect.succeed({} as Record<string, ModelsDev.Provider>)),
+      )
+      const orynaData = yield* orynaEffect
+      const orynaRemote = orynaData?.["oryna"]
+
+      const filtered: Record<string, ModelsDev.Provider> = {}
+      filtered["oryna"] = {
+        id: "oryna",
+        name: orynaRemote?.name ?? "Oryna AI",
+        env: orynaRemote?.env ?? ["ORYNA_API_KEY"],
+        npm: orynaRemote?.npm,
+        api: orynaRemote?.api ?? (process.env.ORYNA_BASE_URL ?? "https://api.oryna.ai/v1"),
+        models: orynaRemote?.models ?? {},
       }
+
+      const proxyUrl = process.env.ORYNA_PROXY_URL
+      filtered["oryna-proxy"] = {
+        id: "oryna-proxy",
+        name: "Oryna Router",
+        env: [],
+        api: proxyUrl ? `${proxyUrl.endsWith("/") ? proxyUrl.slice(0, -1) : proxyUrl}/v1` : "",
+        models: {},
+      }
+
       const connected = yield* provider.list()
+      const orynaIDs = new Set(["oryna", "oryna-proxy"])
+      const filteredConnected: Record<string, any> = {}
+      for (const [id, info] of Object.entries(connected)) {
+        if (orynaIDs.has(id)) filteredConnected[id] = info
+      }
       const providers = Object.assign(
         mapValues(filtered, (item) => Provider.fromModelsDevProvider(item)),
-        connected,
+        filteredConnected,
       )
+
+      const withModels = Object.fromEntries(
+        Object.entries(providers).filter(([, p]) => p && Object.keys(p.models).length > 0),
+      )
+
       return {
         all: Object.values(providers).map(Provider.toPublicInfo),
-        default: Provider.defaultModelIDs(providers),
-        connected: Object.keys(connected),
+        default: Provider.defaultModelIDs(withModels),
+        connected: Object.keys(filteredConnected),
       }
     })
 

@@ -14,15 +14,12 @@ import * as Clipboard from "@tui/util/clipboard"
 import { useToast } from "../ui/toast"
 import { isConsoleManagedProvider } from "@tui/util/provider-origin"
 import { useConnected } from "./use-connected"
+import { scanLan } from "@/util/lan-scan"
 import { useBindings } from "../keymap"
 
 const PROVIDER_PRIORITY: Record<string, number> = {
-  opencode: 0,
-  "opencode-go": 1,
-  openai: 2,
-  "github-copilot": 3,
-  anthropic: 4,
-  google: 5,
+  oryna: 0,
+  "oryna-proxy": 1,
 }
 
 const CUSTOM_PROVIDER_OPTION_VALUE = "__opencode_custom_provider__"
@@ -55,6 +52,7 @@ export function providerOptions(list: { id: string; name: string }[]): ProviderO
         value: provider.id,
         providerID: provider.id,
         description: {
+          oryna: "(Recommended)",
           opencode: "(Recommended)",
           anthropic: "(API key)",
           openai: "(ChatGPT Plus/Pro or API key)",
@@ -63,13 +61,6 @@ export function providerOptions(list: { id: string; name: string }[]): ProviderO
         category: provider.id in PROVIDER_PRIORITY ? "Popular" : "Providers",
       })),
     ),
-    {
-      type: "custom",
-      title: "Other",
-      value: CUSTOM_PROVIDER_OPTION_VALUE,
-      description: "Custom provider",
-      category: "Providers",
-    },
   ]
 }
 
@@ -140,6 +131,24 @@ export function createDialogProviderOptions() {
           gutter: connected && onboarded() ? () => <text fg={theme.success}>✓</text> : undefined,
           async onSelect() {
             if (consoleManaged) return
+
+            if (providerID === "oryna-proxy") {
+              const proxyUrl = process.env.ORYNA_PROXY_URL ?? (await scanLan().then((r) => r?.url))
+              if (!proxyUrl) {
+                toast.show({ variant: "error", message: "No Oryna Router found on local network" })
+                dialog.clear()
+                return
+              }
+              process.env.ORYNA_PROXY_URL = proxyUrl
+              await sdk.client.auth.set({
+                providerID: "oryna-proxy",
+                auth: { type: "api", key: "sk-oryna-router" },
+              })
+              await sdk.client.instance.dispose()
+              await sync.bootstrap()
+              dialog.replace(() => <DialogModel providerID={providerID} />)
+              return
+            }
 
             const methods = sync.data.provider_auth[providerID] ?? [
               {
@@ -370,6 +379,16 @@ function ApiMethod(props: ApiMethodProps) {
               </text>
               <text fg={theme.text}>
                 Go to <span style={{ fg: theme.primary }}>https://opencode.ai/zen</span> to get a key
+              </text>
+            </box>
+          ),
+          oryna: (
+            <box gap={1}>
+              <text fg={theme.textMuted}>
+                Oryna AI provides access to the best AI models through a single API.
+              </text>
+              <text fg={theme.text}>
+                Go to <span style={{ fg: theme.primary }}>https://oryna.ai</span> to get your API key
               </text>
             </box>
           ),

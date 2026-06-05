@@ -1580,13 +1580,27 @@ export function Prompt(props: PromptProps) {
                       <Show when={store.mode === "normal"}>
                         <box flexDirection="row" gap={1}>
                           <text fg={fadeColor(theme.textMuted, modelMetaAlpha())}>·</text>
-                          <text
-                            flexShrink={0}
-                            fg={fadeColor(leader() ? theme.textMuted : theme.text, modelMetaAlpha())}
+                          <Show
+                            when={props.sessionID}
+                            fallback={
+                              <text
+                                flexShrink={0}
+                                fg={fadeColor(leader() ? theme.textMuted : theme.text, modelMetaAlpha())}
+                              >
+                                Oryna AI
+                              </text>
+                            }
                           >
-                            {local.model.parsed().model}
-                          </text>
-                          <text fg={fadeColor(theme.textMuted, modelMetaAlpha())}>{currentProviderLabel()}</text>
+                            <text
+                              flexShrink={0}
+                              fg={fadeColor(leader() ? theme.textMuted : theme.text, modelMetaAlpha())}
+                            >
+                              {local.model.parsed().model}
+                            </text>
+                          </Show>
+                          <Show when={props.sessionID}>
+                            <text fg={fadeColor(theme.textMuted, modelMetaAlpha())}>{currentProviderLabel()}</text>
+                          </Show>
                           <Show when={showVariant()}>
                             <text fg={fadeColor(theme.textMuted, variantMetaAlpha())}>·</text>
                             <text>

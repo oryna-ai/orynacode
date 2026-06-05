@@ -1,13 +1,13 @@
 {
-  "name": "@opencode-ai/desktop",
+  "name": "@oryna-ai/orynacode-desktop",
   "private": true,
   "version": "1.15.13",
   "type": "module",
   "license": "MIT",
-  "homepage": "https://opencode.ai",
+  "homepage": "https://oryna.ai",
   "author": {
-    "name": "OpenCode",
-    "email": "hello@opencode.ai"
+    "name": "Oryna",
+    "email": "hello@oryna.ai"
   },
   "scripts": {
     "typecheck": "tsgo -b",

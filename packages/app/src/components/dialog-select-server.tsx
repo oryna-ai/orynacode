@@ -19,7 +19,7 @@ import { normalizeServerUrl, ServerConnection, useServer } from "@/context/serve
 import { type ServerHealth, useCheckServerHealth } from "@/utils/server-health"
 import { useSettings } from "@/context/settings"
 
-const DEFAULT_USERNAME = "opencode"
+const DEFAULT_USERNAME = "orynacode"
 
 interface ServerFormProps {
   value: string

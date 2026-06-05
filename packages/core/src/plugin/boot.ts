@@ -23,6 +23,7 @@ import { SkillPlugin } from "./skill"
 import { ConfigProviderPlugin } from "../config/plugin/provider"
 import { EnvPlugin } from "./env"
 import { ModelsDevPlugin } from "./models-dev"
+import { OrynaPlugin } from "./provider/oryna"
 import { ProviderPlugins } from "./provider"
 import { SkillV2 } from "../skill"
 
@@ -104,6 +105,7 @@ export const layer = Layer.effect(
       yield* add(ConfigAgentPlugin.Plugin)
       yield* add(ConfigCommandPlugin.Plugin)
       yield* add(ConfigSkillPlugin.Plugin)
+      yield* add(OrynaPlugin)
     }).pipe(Effect.withSpan("PluginBoot.boot"))
 
     yield* boot.pipe(

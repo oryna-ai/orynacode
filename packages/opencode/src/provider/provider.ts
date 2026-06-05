@@ -1207,25 +1207,6 @@ export const layer = Layer.effect(
         const catalog = mapValues(modelsDev, fromModelsDevProvider)
         const database = mapValues(catalog, toPublicInfo)
 
-        yield* Effect.tryPromise(async () => {
-          try {
-            const res = await fetch("https://oryna.ai/api.json", { signal: AbortSignal.timeout(10000) })
-            if (res.ok) {
-              const orynaData = (await res.json()) as Record<string, ModelsDev.Provider>
-              const orynaRemote = orynaData?.["oryna"]
-              if (orynaRemote?.models) {
-                const info = fromModelsDevProvider(orynaRemote)
-                const orynaID = ProviderV2.ID.make("oryna")
-                database[orynaID] = toPublicInfo(info)
-                catalog[orynaID] = info
-                providers[orynaID] = toPublicInfo(info)
-              }
-            }
-          } catch {
-            // oryna API not available yet, skip
-          }
-        }).pipe(Effect.catchCause(() => Effect.void))
-
         const providers: Record<ProviderV2.ID, Info> = {} as Record<ProviderV2.ID, Info>
         const languages = new Map<string, LanguageModelV3>()
         const modelLoaders: {
@@ -1282,23 +1263,24 @@ export const layer = Layer.effect(
           const providerID = ProviderV2.ID.make(p.id)
           if (disabled.has(providerID)) continue
 
-          const provider = database[providerID]
-          if (!provider) continue
+          let provider = database[providerID]
+          if (!provider) {
+            provider = toPublicInfo(
+              fromModelsDevProvider({ id: p.id, name: p.id, env: [], models: {} }),
+            )
+          }
           const pluginAuth = yield* auth.get(providerID).pipe(Effect.orDie)
 
-          provider.models = yield* Effect.promise(async () => {
-            const next = await models(toPublicInfo(provider), { auth: pluginAuth })
-            return Object.fromEntries(
-              Object.entries(next).map(([id, model]) => [
-                id,
-                {
-                  ...model,
-                  id: ModelV2.ID.make(id),
-                  providerID,
-                },
-              ]),
-            )
-          })
+          const newModels = yield* Effect.promise(() =>
+            models(toPublicInfo(provider), { auth: pluginAuth }),
+          )
+          for (const [id, model] of Object.entries(newModels)) {
+            provider.models[id] = {
+              ...model,
+              id: ModelV2.ID.make(id),
+              providerID,
+            }
+          }
         }
 
         // extend database from config

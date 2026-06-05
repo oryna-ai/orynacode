@@ -141,6 +141,56 @@ async function refreshJwt(oldJwt: string): Promise<string> {
 
 export async function OrynaAuthPlugin(input: PluginInput): Promise<Hooks> {
   return {
+    provider: {
+      id: "oryna",
+      async models(provider, ctx) {
+        try {
+          const res = await fetch("https://oryna.ai/api.json", {
+            signal: AbortSignal.timeout(10000),
+          })
+          if (!res.ok) return {}
+          const data = (await res.json()) as Record<string, any>
+          const oryna = data?.oryna
+          if (!oryna?.models) return {}
+          const result: Record<string, any> = {}
+          for (const [id, model] of Object.entries(oryna.models as Record<string, any>)) {
+            result[id] = {
+              id,
+              name: model.name,
+              family: model.family,
+              api: { id, url: oryna.api ?? "https://api.oryna.ai/v1", npm: oryna.npm ?? "@ai-sdk/openai-compatible" },
+              capabilities: {
+                temperature: model.temperature ?? false,
+                reasoning: model.reasoning ?? false,
+                attachment: model.attachment ?? false,
+                toolcall: model.tool_call ?? true,
+                input: { text: model.modalities?.input?.includes("text") ?? true, audio: false, image: false, video: false, pdf: false },
+                output: { text: model.modalities?.output?.includes("text") ?? true, audio: false, image: false, video: false, pdf: false },
+                interleaved: false,
+              },
+              cost: {
+                input: model.cost?.input ?? 0,
+                output: model.cost?.output ?? 0,
+                cache: { read: model.cost?.cache_read ?? 0, write: model.cost?.cache_write ?? 0 },
+              },
+              limit: {
+                context: model.limit?.context ?? 128000,
+                input: model.limit?.input,
+                output: model.limit?.output ?? 16384,
+              },
+              status: "active" as const,
+              options: {},
+              headers: {},
+              release_date: model.release_date ?? "2025-01-01",
+              variants: {},
+            }
+          }
+          return result
+        } catch {
+          return {}
+        }
+      },
+    },
     auth: {
       provider: "oryna",
       async loader(getAuth) {

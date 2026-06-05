@@ -1268,6 +1268,7 @@ export const layer = Layer.effect(
             provider = toPublicInfo(
               fromModelsDevProvider({ id: p.id, name: p.id, env: [], models: {} }),
             )
+            database[providerID] = provider
           }
           const pluginAuth = yield* auth.get(providerID).pipe(Effect.orDie)
 
@@ -1281,6 +1282,7 @@ export const layer = Layer.effect(
               providerID,
             }
           }
+          mergeProvider(providerID, {})
         }
 
         // extend database from config

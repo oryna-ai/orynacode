@@ -106,7 +106,7 @@ export const ModelsDevPlugin = PluginV2.define({
               draft.limit = {
                 context: model.limit.context,
                 input: model.limit.input,
-                output: model.limit.output,
+                output: model.limit.output ?? 16384,
               }
             })
           }

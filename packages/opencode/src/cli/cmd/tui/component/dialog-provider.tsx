@@ -476,7 +476,18 @@ function ConnectLocal(props: { onClose: () => void }) {
   const [scanSeconds, setScanSeconds] = createSignal(15)
   const [proxyUrl, setProxyUrl] = createSignal("")
   const [manual, setManual] = createSignal(false)
+  const [textareaTarget, setTextareaTarget] = createSignal<any>()
   let scanTimer: any
+  let textarea: any
+
+  useBindings(() => ({
+    target: textareaTarget,
+    enabled: manual() && textareaTarget() !== undefined,
+    commands: [
+      { name: "connect.local.submit", title: "Connect", category: "Dialog", run: () => { if (textarea) onManualConfirm(textarea.plainText) } },
+    ],
+    bindings: [{ key: "enter", group: "dialog.prompt" }],
+  }))
 
   onMount(async () => {
     scanTimer = setInterval(() => setScanSeconds((s) => Math.max(0, s - 1)), 1000)
@@ -586,16 +597,31 @@ function ConnectLocal(props: { onClose: () => void }) {
                 </text>
               </box>
               <box gap={1} paddingTop={1} flexDirection="row">
-              <box gap={1} paddingTop={1} flexDirection="row">
                 <text fg={theme.textMuted}>Don't have Oryna Local? Download at</text>
                 <text fg={theme.primary} onMouseUp={() => open("https://oryna.ai").catch(() => {})}>oryna.ai</text>
-              </box>
               </box>
             </box>
           </Show>
         </>
       }>
-        <DialogPrompt title="Enter address" placeholder="http://192.168.1.100:9527" onConfirm={onManualConfirm} onCancel={() => setManual(false)} />
+        <box gap={1} paddingTop={1}>
+          <text fg={theme.textMuted}>Enter Oryna Local address:</text>
+          <textarea
+            height={3}
+            ref={(val: any) => {
+              textarea = val
+              setTextareaTarget(val)
+            }}
+            placeholder="http://192.168.1.100:9527"
+            placeholderColor={theme.textMuted}
+            textColor={theme.text}
+            focusedTextColor={theme.text}
+            cursorColor={theme.text}
+          />
+          <box flexDirection="row" gap={2}>
+            <text fg={theme.primary} onMouseUp={() => textarea && onManualConfirm(textarea.plainText)}>● Connect</text>
+          </box>
+        </box>
       </Show>
     </box>
   )

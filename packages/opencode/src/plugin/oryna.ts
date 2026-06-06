@@ -143,6 +143,7 @@ export async function OrynaAuthPlugin(input: PluginInput): Promise<Hooks> {
   return {
     provider: {
       id: "oryna",
+      name: "Oryna AI",
       async models(provider, ctx) {
         try {
           const res = await fetch("https://oryna.ai/api.json", {

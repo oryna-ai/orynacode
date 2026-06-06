@@ -1266,7 +1266,7 @@ export const layer = Layer.effect(
           let provider = database[providerID]
           if (!provider) {
             provider = toPublicInfo(
-              fromModelsDevProvider({ id: p.id, name: p.id, env: [], models: {} }),
+              fromModelsDevProvider({ id: p.id, name: p.name ?? p.id, env: [], models: {} }),
             )
             database[providerID] = provider
           }

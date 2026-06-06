@@ -213,6 +213,7 @@ export type ProviderHookContext = {
 
 export type ProviderHook = {
   id: string
+  name?: string
   models?: (provider: ProviderV2, ctx: ProviderHookContext) => Promise<Record<string, ModelV2>>
 }
 

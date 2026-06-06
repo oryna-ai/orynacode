@@ -1,4 +1,4 @@
-import { createMemo, createSignal, onMount, Show } from "solid-js"
+import { createMemo, createSignal, onCleanup, onMount, Show } from "solid-js"
 import { useSync } from "@tui/context/sync"
 import { map, pipe, sortBy } from "remeda"
 import { DialogSelect } from "@tui/ui/dialog-select"
@@ -15,6 +15,7 @@ import { useToast } from "../ui/toast"
 import { isConsoleManagedProvider } from "@tui/util/provider-origin"
 import { useConnected } from "./use-connected"
 import { scanLan } from "@/util/lan-scan"
+import { Spinner } from "./spinner"
 import { useBindings } from "../keymap"
 
 const PROVIDER_PRIORITY: Record<string, number> = {
@@ -130,56 +131,7 @@ export function createDialogProviderOptions() {
             if (consoleManaged) return
 
             if (providerID === "oryna-proxy") {
-              let proxyUrl = process.env.ORYNA_PROXY_URL
-              if (!proxyUrl) {
-                toast.show({ variant: "info", message: "Scanning for Oryna Local..." })
-                try {
-                  proxyUrl = await Promise.race([
-                    scanLan().then((r) => r?.url),
-                    new Promise<undefined>((r) => setTimeout(() => r(undefined), 15000)),
-                  ])
-                } catch {
-                  proxyUrl = undefined
-                }
-              }
-              if (proxyUrl) {
-                process.env.ORYNA_PROXY_URL = proxyUrl
-                await sdk.client.auth.set({
-                  providerID: "oryna-proxy",
-                  auth: { type: "api", key: "sk-oryna-local" },
-                })
-                await sdk.client.instance.dispose()
-                await sync.bootstrap()
-                dialog.replace(() => <DialogModel providerID={providerID} />)
-                return
-              }
-
-              const manual = await DialogPrompt.show(dialog, "Oryna Local", {
-                placeholder: "http://192.168.1.100:9527",
-                description: () => (
-                  <box gap={1}>
-                    <text fg={theme.textMuted}>
-                      No Oryna Local found on your network. Enter the IP and port manually, or visit
-                    </text>
-                    <text fg={theme.primary}>
-                      https://oryna.ai to download Oryna Local
-                    </text>
-                  </box>
-                ),
-              })
-              if (!manual) {
-                dialog.clear()
-                return
-              }
-              const url = manual.trim().replace(/\/+$/, "")
-              process.env.ORYNA_PROXY_URL = url
-              await sdk.client.auth.set({
-                providerID: "oryna-proxy",
-                auth: { type: "api", key: "sk-oryna-local" },
-              })
-              await sdk.client.instance.dispose()
-              await sync.bootstrap()
-              dialog.replace(() => <DialogModel providerID={providerID} />)
+              dialog.replace(() => <ConnectLocal onClose={() => dialog.clear()} />)
               return
             }
 
@@ -512,4 +464,121 @@ async function PromptsMethod(props: PromptsMethodProps) {
     inputs[prompt.key] = value
   }
   return inputs
+}
+
+function ConnectLocal(props: { onClose: () => void }) {
+  const { theme } = useTheme()
+  const dialog = useDialog()
+  const sdk = useSDK()
+  const sync = useSync()
+  const [status, setStatus] = createSignal<"scanning" | "found" | "not-found" | "manual">("scanning")
+  const [proxyUrl, setProxyUrl] = createSignal("")
+  let textarea: any
+
+  onMount(async () => {
+    if (process.env.ORYNA_PROXY_URL) {
+      setProxyUrl(process.env.ORYNA_PROXY_URL)
+      connect(process.env.ORYNA_PROXY_URL)
+      return
+    }
+    try {
+      const result = await Promise.race([
+        scanLan().then((r) => r?.url),
+        new Promise<undefined>((r) => setTimeout(() => r(undefined), 15000)),
+      ])
+      if (result) {
+        setProxyUrl(result)
+        setStatus("found")
+        setTimeout(() => connect(result), 800)
+      } else {
+        setStatus("not-found")
+      }
+    } catch {
+      setStatus("not-found")
+    }
+  })
+
+  async function connect(url: string) {
+    process.env.ORYNA_PROXY_URL = url
+    await sdk.client.auth.set({
+      providerID: "oryna-proxy",
+      auth: { type: "api", key: "sk-oryna-local" },
+    })
+    await sdk.client.instance.dispose()
+    await sync.bootstrap()
+    dialog.replace(() => <DialogModel providerID="oryna-proxy" />)
+  }
+
+  function handleManual() {
+    setStatus("manual")
+  }
+
+  function submitManual() {
+    if (!textarea) return
+    const url = textarea.plainText.trim().replace(/\/+$/, "")
+    if (!url) return
+    connect(url)
+  }
+
+  return (
+    <box paddingLeft={2} paddingRight={2} gap={1} paddingBottom={1}>
+      <box flexDirection="row" justifyContent="space-between">
+        <text attributes={TextAttributes.BOLD} fg={theme.text}>
+          Oryna Local
+        </text>
+        <text fg={theme.textMuted} onMouseUp={props.onClose}>
+          esc
+        </text>
+      </box>
+
+      <Show when={status() === "scanning"}>
+        <box gap={1} paddingTop={1}>
+          <Spinner color={theme.primary} />
+          <text fg={theme.textMuted}>Scanning local network for Oryna Local...</text>
+          <text fg={theme.textMuted}>
+            Looking for port 9527 in nearby subnets
+          </text>
+        </box>
+      </Show>
+
+      <Show when={status() === "found"}>
+        <box gap={1} paddingTop={1}>
+          <text fg={theme.success}>✓ Found Oryna Local</text>
+          <text fg={theme.textMuted}>{proxyUrl()}</text>
+          <text fg={theme.textMuted}>Connecting...</text>
+        </box>
+      </Show>
+
+      <Show when={status() === "not-found" || status() === "manual"}>
+        <box gap={1} paddingTop={1}>
+          <Show when={status() === "not-found"}>
+            <text fg={theme.warning}>No Oryna Local found on your network</text>
+          </Show>
+          <text fg={theme.textMuted}>
+            Enter the IP and port to connect, or visit
+            <span style={{ fg: theme.primary }}> https://oryna.ai </span>
+            to download Oryna Local
+          </text>
+          <textarea
+            ref={(val: any) => { textarea = val }}
+            height={3}
+            placeholder="http://192.168.1.100:9527"
+            placeholderColor={theme.textMuted}
+            textColor={theme.text}
+            focusedTextColor={theme.text}
+            cursorColor={theme.text}
+          />
+          <box gap={1} flexDirection="row">
+            <text
+              fg={theme.primary}
+              onMouseUp={submitManual}
+            >
+              ● Connect
+            </text>
+            <text fg={theme.textMuted}>enter</text>
+          </box>
+        </box>
+      </Show>
+    </box>
+  )
 }

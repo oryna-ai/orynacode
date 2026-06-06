@@ -1,10 +1,32 @@
 import { Config } from "@/config/config"
 import { Provider } from "@/provider/provider"
 import * as InstanceState from "@/effect/instance-state"
+import { Global } from "@opencode-ai/core/global"
 import { Effect } from "effect"
 import { HttpApiBuilder } from "effect/unstable/httpapi"
 import { InstanceHttpApi } from "../api"
 import { markInstanceForDisposal } from "../lifecycle"
+import path from "path"
+
+let _localUrlTried = false
+
+async function tryRecoverLocalUrl(): Promise<string | undefined> {
+  if (_localUrlTried) return
+  _localUrlTried = true
+  try {
+    const authFile = path.join(Global.Path.data, "auth.json")
+    const data = await Bun.file(authFile).json()
+    const localAuth = data?.["oryna-local"]
+    if (!localAuth || localAuth.type !== "api" || !localAuth.metadata?.url) return
+    const url = localAuth.metadata.url
+    const base = url.endsWith("/") ? url.slice(0, -1) : url
+    const res = await fetch(`${base}/api.json`, { signal: AbortSignal.timeout(3000) })
+    if (res.ok) {
+      process.env.ORYNA_LOCAL_URL = url
+      return url
+    }
+  } catch {}
+}
 
 function mapOrynaModels(data: Record<string, any>): Record<string, any> {
   const oryna = data?.oryna
@@ -83,7 +105,9 @@ export const configHandlers = HttpApiBuilder.group(InstanceHttpApi, "config", (h
         if (orynaIDs.has(id)) filtered[id] = info
       }
 
-      const localUrl = process.env.ORYNA_LOCAL_URL
+      const localUrl = process.env.ORYNA_LOCAL_URL ?? (yield* Effect.tryPromise(() => tryRecoverLocalUrl()).pipe(
+        Effect.catchCause(() => Effect.succeed(undefined)),
+      ))
       if (localUrl) {
         const raw = yield* Effect.tryPromise(() => fetchProxyData(localUrl)).pipe(
           Effect.catchCause(() => Effect.succeed({ api: undefined, models: {} })),

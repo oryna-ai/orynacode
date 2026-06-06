@@ -487,7 +487,7 @@ function ConnectLocal(props: { onClose: () => void }) {
     commands: [
       { name: "connect.local.submit", title: "Connect", category: "Dialog", run: () => { if (textarea) onManualConfirm(textarea.plainText) } },
     ],
-    bindings: [{ key: "enter" }],
+    bindings: [{ key: "return", cmd: "connect.local.submit" }],
   }))
 
   createEffect(() => {
@@ -572,7 +572,7 @@ function ConnectLocal(props: { onClose: () => void }) {
           <Show when={status() === "scanning"}>
             <box flexGrow={1} alignItems="center" justifyContent="center" gap={1} paddingTop={2} paddingBottom={2}>
               <Spinner color={theme.primary} />
-              <text fg={theme.textMuted}>Scanning local network for Oryna Local ({scanSeconds()}s remaining)</text>
+              <text fg={theme.textMuted}>Scanning local network for Oryna Local ({scanSeconds()}s)</text>
               <text fg={theme.textMuted}>Checking port 9527 in nearby subnets</text>
             </box>
           </Show>

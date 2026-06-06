@@ -475,6 +475,14 @@ function ConnectLocal(props: { onClose: () => void }) {
   const [proxyUrl, setProxyUrl] = createSignal("")
   let textarea: any
 
+  async function handleManualConnect() {
+    const url = await DialogPrompt.show(dialog, "Oryna Local", {
+      placeholder: "http://192.168.1.100:9527",
+    })
+    if (!url) return
+    connect(url.trim().replace(/\/+$/, ""))
+  }
+
   onMount(async () => {
     if (process.env.ORYNA_PROXY_URL) {
       setProxyUrl(process.env.ORYNA_PROXY_URL)
@@ -509,17 +517,6 @@ function ConnectLocal(props: { onClose: () => void }) {
     dialog.replace(() => <DialogModel providerID="oryna-proxy" />)
   }
 
-  function handleManual() {
-    setStatus("manual")
-  }
-
-  function submitManual() {
-    if (!textarea) return
-    const url = textarea.plainText.trim().replace(/\/+$/, "")
-    if (!url) return
-    connect(url)
-  }
-
   return (
     <box paddingLeft={2} paddingRight={2} gap={1} paddingBottom={1}>
       <box flexDirection="row" justifyContent="space-between">
@@ -532,12 +529,10 @@ function ConnectLocal(props: { onClose: () => void }) {
       </box>
 
       <Show when={status() === "scanning"}>
-        <box gap={1} paddingTop={1}>
+        <box flexGrow={1} alignItems="center" justifyContent="center" gap={1} paddingTop={2} paddingBottom={2}>
           <Spinner color={theme.primary} />
           <text fg={theme.textMuted}>Scanning local network for Oryna Local...</text>
-          <text fg={theme.textMuted}>
-            Looking for port 9527 in nearby subnets
-          </text>
+          <text fg={theme.textMuted}>Looking for port 9527 in nearby subnets</text>
         </box>
       </Show>
 
@@ -555,28 +550,11 @@ function ConnectLocal(props: { onClose: () => void }) {
             <text fg={theme.warning}>No Oryna Local found on your network</text>
           </Show>
           <text fg={theme.textMuted}>
-            Enter the IP and port to connect, or visit
-            <span style={{ fg: theme.primary }}> https://oryna.ai </span>
-            to download Oryna Local
+            Visit <span style={{ fg: theme.primary }}>https://oryna.ai</span> to download Oryna Local
           </text>
-          <textarea
-            ref={(val: any) => { textarea = val }}
-            height={3}
-            placeholder="http://192.168.1.100:9527"
-            placeholderColor={theme.textMuted}
-            textColor={theme.text}
-            focusedTextColor={theme.text}
-            cursorColor={theme.text}
-          />
-          <box gap={1} flexDirection="row">
-            <text
-              fg={theme.primary}
-              onMouseUp={submitManual}
-            >
-              ● Connect
-            </text>
-            <text fg={theme.textMuted}>enter</text>
-          </box>
+          <text fg={theme.primary} onMouseUp={() => handleManualConnect()}>
+            Enter IP manually
+          </text>
         </box>
       </Show>
     </box>

@@ -14,6 +14,7 @@ import type { ServerReadyData, WslConfig } from "../preload/types"
 import { checkAppExists, resolveAppPath, wslPath } from "./apps"
 import { CHANNEL, UPDATER_ENABLED } from "./constants"
 import { registerIpcHandlers, sendDeepLinks, sendMenuCommand } from "./ipc"
+import { forwardInitializationFailure } from "./initialization"
 import { exportDebugLogs, initCrashReporter, initLogging, startNetLog, write as writeLog } from "./logging"
 import { parseMarkdown } from "./markdown"
 import { createMenu } from "./menu"
@@ -38,14 +39,14 @@ import { checkUpdate, checkForUpdates, installUpdate, setupAutoUpdater } from ".
 import { Deferred, Effect, Fiber } from "effect"
 
 const APP_NAMES: Record<string, string> = {
-  dev: "OrynaCode Dev",
-  beta: "OrynaCode Beta",
-  prod: "OrynaCode",
+  dev: "OpenCode Dev",
+  beta: "OpenCode Beta",
+  prod: "OpenCode",
 }
 const APP_IDS: Record<string, string> = {
-  dev: "ai.oryna.orynacode.dev",
-  beta: "ai.oryna.orynacode.beta",
-  prod: "ai.oryna.orynacode",
+  dev: "ai.opencode.desktop.dev",
+  beta: "ai.opencode.desktop.beta",
+  prod: "ai.opencode.desktop",
 }
 const TEST_ONBOARDING = process.env.OPENCODE_TEST_ONBOARDING === "1"
 const jsCallStackFeature = "DocumentPolicyIncludeJSCallStacksInCrashReports"
@@ -161,7 +162,7 @@ const main = Effect.gen(function* () {
   preferAppEnv(app.getPath("userData"))
 
   app.on("second-instance", (_event: Event, argv: string[]) => {
-    const urls = argv.filter((arg: string) => arg.startsWith("orynacode://"))
+    const urls = argv.filter((arg: string) => arg.startsWith("opencode://"))
     if (urls.length) {
       logger.log("deep link received via second-instance", { urls })
       emitDeepLinks(urls)
@@ -207,7 +208,7 @@ const main = Effect.gen(function* () {
     })
   }
 
-  const serverReady = Deferred.makeUnsafe<ServerReadyData>()
+  const serverReady = Deferred.makeUnsafe<ServerReadyData, unknown>()
 
   registerIpcHandlers({
     killSidecar: () => killSidecar(),
@@ -243,7 +244,7 @@ const main = Effect.gen(function* () {
   yield* Effect.promise(() => app.whenReady())
 
   if (!TEST_ONBOARDING) migrate()
-  app.setAsDefaultProtocolClient("orynacode")
+  app.setAsDefaultProtocolClient("opencode")
   registerRendererProtocol()
   setDockIcon()
   setupAutoUpdater()
@@ -256,7 +257,7 @@ const main = Effect.gen(function* () {
   )
 
   const port = yield* Effect.gen(function* () {
-    const fromEnv = process.env.ORYNACODE_PORT
+    const fromEnv = process.env.OPENCODE_PORT
     if (fromEnv) {
       const parsed = Number.parseInt(fromEnv, 10)
       if (!Number.isNaN(parsed)) return parsed
@@ -300,7 +301,7 @@ const main = Effect.gen(function* () {
     server = listener
     yield* Deferred.succeed(serverReady, {
       url,
-      username: "orynacode",
+      username: "opencode",
       password,
     })
 
@@ -314,7 +315,7 @@ const main = Effect.gen(function* () {
     )
 
     logger.log("loading task finished")
-  }).pipe(Effect.forkChild)
+  }).pipe(forwardInitializationFailure(serverReady), Effect.forkChild)
 
   yield* Fiber.await(loadingTask)
 

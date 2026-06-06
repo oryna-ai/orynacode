@@ -32,10 +32,23 @@ function tauriAppId() {
 }
 
 // Migrate a single Tauri .dat file into the corresponding electron-store.
-// `orynacode.settings.dat` maps to the `orynacode.settings` store.
-function migrateFile(filepath: string, filename: string) {
-  const data = JSON.parse(readFileSync(filepath, "utf-8"))
-  const storeName = filename === "orynacode.settings.dat" || filename === "opencode.settings.dat" ? "orynacode.settings" : filename
+// `opencode.settings.dat` is special: it maps to the `opencode.settings` store
+// (the electron-store name without the `.dat` extension). All other .dat files
+// keep their full filename as the electron-store name so they match what the
+// renderer already passes via IPC (e.g. `"default.dat"`, `"opencode.global.dat"`).
+function migrateFile(datPath: string, filename: string) {
+  let data: Record<string, unknown>
+  try {
+    data = JSON.parse(readFileSync(datPath, "utf-8"))
+  } catch (err) {
+    log.warn("tauri migration: failed to parse", filename, err)
+    return
+  }
+
+  // opencode.settings.dat → the electron settings store ("opencode.settings").
+  // All other .dat files keep their full filename as the store name so they match
+  // what the renderer passes via IPC (e.g. "default.dat", "opencode.global.dat").
+  const storeName = filename === "opencode.settings.dat" ? "opencode.settings" : filename
   const target = getStore(storeName)
   const migrated: string[] = []
   const skipped: string[] = []

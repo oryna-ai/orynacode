@@ -52,7 +52,7 @@ export function providerOptions(list: { id: string; name: string }[]): ProviderO
         value: provider.id,
         providerID: provider.id,
         description: {
-          oryna: "Cloud API — DeepSeek, QWen, MiMo & more",
+          oryna: "Cloud API — China's Best LLMs, Now Global.",
           "oryna-proxy": "Deploy on your own network",
         }[provider.id],
         category: "Oryna",

@@ -77,7 +77,7 @@ export const providerHandlers = HttpApiBuilder.group(InstanceHttpApi, "provider"
       const proxyUrl = process.env.ORYNA_PROXY_URL
       filtered["oryna-proxy"] = {
         id: "oryna-proxy",
-        name: "Oryna Router",
+        name: "Oryna Local",
         env: [],
         api: proxyUrl ? `${proxyUrl.endsWith("/") ? proxyUrl.slice(0, -1) : proxyUrl}/v1` : "",
         models: {},

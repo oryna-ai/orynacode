@@ -52,11 +52,8 @@ export function providerOptions(list: { id: string; name: string }[]): ProviderO
         value: provider.id,
         providerID: provider.id,
         description: {
-          oryna: "(Recommended)",
-          opencode: "(Recommended)",
-          anthropic: "(API key)",
-          openai: "(ChatGPT Plus/Pro or API key)",
-          "opencode-go": "Low cost subscription for everyone",
+          oryna: "Cloud API — DeepSeek, QWen, MiMo & more",
+          "oryna-proxy": "Deploy on your own network",
         }[provider.id],
         category: provider.id in PROVIDER_PRIORITY ? "Popular" : "Providers",
       })),
@@ -135,14 +132,17 @@ export function createDialogProviderOptions() {
             if (providerID === "oryna-proxy") {
               const proxyUrl = process.env.ORYNA_PROXY_URL ?? (await scanLan().then((r) => r?.url))
               if (!proxyUrl) {
-                toast.show({ variant: "error", message: "No Oryna Router found on local network" })
+                toast.show({
+                  variant: "error",
+                  message: "No Oryna Local proxy found. Visit https://oryna.ai to download and install Oryna Local.",
+                })
                 dialog.clear()
                 return
               }
               process.env.ORYNA_PROXY_URL = proxyUrl
               await sdk.client.auth.set({
                 providerID: "oryna-proxy",
-                auth: { type: "api", key: "sk-oryna-router" },
+                auth: { type: "api", key: "sk-oryna-local" },
               })
               await sdk.client.instance.dispose()
               await sync.bootstrap()

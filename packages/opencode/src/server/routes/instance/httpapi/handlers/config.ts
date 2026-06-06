@@ -9,8 +9,9 @@ import { markInstanceForDisposal } from "../lifecycle"
 import path from "path"
 
 let _localUrlTried = false
+let _localAuthKey: string | undefined
 
-async function tryRecoverLocalUrl(): Promise<string | undefined> {
+async function tryRecoverLocalUrl(): Promise<{ url: string; key?: string } | undefined> {
   if (_localUrlTried) return
   _localUrlTried = true
   try {
@@ -19,11 +20,13 @@ async function tryRecoverLocalUrl(): Promise<string | undefined> {
     const localAuth = data?.["oryna-local"]
     if (!localAuth || localAuth.type !== "api" || !localAuth.metadata?.url) return
     const url = localAuth.metadata.url
+    const key = localAuth.key
     const base = url.endsWith("/") ? url.slice(0, -1) : url
     const res = await fetch(`${base}/api.json`, { signal: AbortSignal.timeout(3000) })
     if (res.ok) {
       process.env.ORYNA_LOCAL_URL = url
-      return url
+      _localAuthKey = key
+      return { url, key }
     }
   } catch {}
 }
@@ -105,9 +108,13 @@ export const configHandlers = HttpApiBuilder.group(InstanceHttpApi, "config", (h
         if (orynaIDs.has(id)) filtered[id] = info
       }
 
-      const localUrl = process.env.ORYNA_LOCAL_URL ?? (yield* Effect.tryPromise(() => tryRecoverLocalUrl()).pipe(
-        Effect.catchCause(() => Effect.succeed(undefined)),
-      ))
+      const localUrlRecover = process.env.ORYNA_LOCAL_URL
+        ? { url: process.env.ORYNA_LOCAL_URL }
+        : (yield* Effect.tryPromise(() => tryRecoverLocalUrl()).pipe(
+          Effect.catchCause(() => Effect.succeed(undefined)),
+        ))
+      const localUrl = localUrlRecover?.url
+      const recoveredKey = localUrlRecover?.key
       if (localUrl) {
         const raw = yield* Effect.tryPromise(() => fetchProxyData(localUrl)).pipe(
           Effect.catchCause(() => Effect.succeed({ api: undefined, models: {} })),
@@ -115,12 +122,13 @@ export const configHandlers = HttpApiBuilder.group(InstanceHttpApi, "config", (h
         const models = (raw as any).models ?? {}
         const localApi = (raw as any).api
         const existing = allProviders["oryna-local" as any] as Record<string, any> | undefined
+        const existingKey = existing?.key || recoveredKey
         const entry = {
           id: "oryna-local",
           name: "Oryna Local",
           env: [],
           source: existing?.source ?? "api",
-          key: existing?.key,
+          key: existingKey,
           api: localApi ? { url: localApi } : existing?.api,
           models,
           options: existing?.options ?? {},

@@ -184,54 +184,57 @@ async function refreshJwt(oldJwt: string): Promise<string> {
   }
 }
 
+function mapOrynaModels(data: Record<string, any>): Record<string, any> {
+  const oryna = data?.oryna
+  if (!oryna?.models) return {}
+  const result: Record<string, any> = {}
+  for (const [id, model] of Object.entries(oryna.models as Record<string, any>)) {
+    result[id] = {
+      id,
+      name: model.name,
+      family: model.family,
+      api: { id, url: oryna.api ?? "https://api.oryna.ai/v1", npm: oryna.npm ?? "@ai-sdk/openai-compatible" },
+      capabilities: {
+        temperature: model.temperature ?? false,
+        reasoning: model.reasoning ?? false,
+        attachment: model.attachment ?? false,
+        toolcall: model.tool_call ?? true,
+        input: { text: model.modalities?.input?.includes("text") ?? true, audio: false, image: false, video: false, pdf: false },
+        output: { text: model.modalities?.output?.includes("text") ?? true, audio: false, image: false, video: false, pdf: false },
+        interleaved: false,
+      },
+      cost: {
+        input: model.cost?.input ?? 0,
+        output: model.cost?.output ?? 0,
+        cache: { read: model.cost?.cache_read ?? 0, write: model.cost?.cache_write ?? 0 },
+      },
+      limit: {
+        context: model.limit?.context ?? 128000,
+        input: model.limit?.input,
+        output: model.limit?.output ?? 16384,
+      },
+      status: "active" as const,
+      options: {},
+      headers: {},
+      release_date: model.release_date ?? "2025-01-01",
+      variants: {},
+    }
+  }
+  return result
+}
+
 export async function OrynaAuthPlugin(input: PluginInput): Promise<Hooks> {
   return {
     provider: {
       id: "oryna",
       name: "Oryna AI",
-      async models(provider, ctx) {
+      async models(_provider, _ctx) {
         try {
           const res = await fetch("https://oryna.ai/api.json", {
             signal: AbortSignal.timeout(10000),
           })
           if (!res.ok) return {}
-          const data = (await res.json()) as Record<string, any>
-          const oryna = data?.oryna
-          if (!oryna?.models) return {}
-          const result: Record<string, any> = {}
-          for (const [id, model] of Object.entries(oryna.models as Record<string, any>)) {
-            result[id] = {
-              id,
-              name: model.name,
-              family: model.family,
-              api: { id, url: oryna.api ?? "https://api.oryna.ai/v1", npm: oryna.npm ?? "@ai-sdk/openai-compatible" },
-              capabilities: {
-                temperature: model.temperature ?? false,
-                reasoning: model.reasoning ?? false,
-                attachment: model.attachment ?? false,
-                toolcall: model.tool_call ?? true,
-                input: { text: model.modalities?.input?.includes("text") ?? true, audio: false, image: false, video: false, pdf: false },
-                output: { text: model.modalities?.output?.includes("text") ?? true, audio: false, image: false, video: false, pdf: false },
-                interleaved: false,
-              },
-              cost: {
-                input: model.cost?.input ?? 0,
-                output: model.cost?.output ?? 0,
-                cache: { read: model.cost?.cache_read ?? 0, write: model.cost?.cache_write ?? 0 },
-              },
-              limit: {
-                context: model.limit?.context ?? 128000,
-                input: model.limit?.input,
-                output: model.limit?.output ?? 16384,
-              },
-              status: "active" as const,
-              options: {},
-              headers: {},
-              release_date: model.release_date ?? "2025-01-01",
-              variants: {},
-            }
-          }
-          return result
+          return mapOrynaModels(await res.json())
         } catch {
           return {}
         }
@@ -317,6 +320,29 @@ export async function OrynaAuthPlugin(input: PluginInput): Promise<Hooks> {
           label: "API key",
         },
       ],
+    },
+  }
+}
+
+export async function OrynaLocalProvider(_input: PluginInput): Promise<Hooks> {
+  return {
+    provider: {
+      id: "oryna-proxy",
+      name: "Oryna Local",
+      async models(_provider, _ctx) {
+        const url = process.env.ORYNA_PROXY_URL
+        if (!url) return {}
+        try {
+          const base = url.endsWith("/") ? url.slice(0, -1) : url
+          const res = await fetch(`${base}/api.json`, {
+            signal: AbortSignal.timeout(10000),
+          })
+          if (!res.ok) return {}
+          return mapOrynaModels(await res.json())
+        } catch {
+          return {}
+        }
+      },
     },
   }
 }

@@ -1207,16 +1207,6 @@ export const layer = Layer.effect(
         const catalog = mapValues(modelsDev, fromModelsDevProvider)
         const database = mapValues(catalog, toPublicInfo)
 
-        // ensure oryna-proxy exists in database so mergeProvider can promote it when local proxy is connected
-        if (process.env.ORYNA_PROXY_URL) {
-          database["oryna-proxy"] = database["oryna-proxy"] ?? toPublicInfo({
-            id: "oryna-proxy",
-            name: "Oryna Local",
-            env: [],
-            models: {},
-          } as any)
-        }
-
         const providers: Record<ProviderV2.ID, Info> = {} as Record<ProviderV2.ID, Info>
         const languages = new Map<string, LanguageModelV3>()
         const modelLoaders: {

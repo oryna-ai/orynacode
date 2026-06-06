@@ -19,7 +19,7 @@ import { CloudflareAIGatewayAuthPlugin, CloudflareWorkersAuthPlugin } from "./cl
 import { AzureAuthPlugin } from "./azure"
 import { DigitalOceanAuthPlugin } from "./digitalocean"
 import { XaiAuthPlugin } from "./xai"
-import { OrynaAuthPlugin } from "./oryna"
+import { OrynaAuthPlugin, OrynaLocalProvider } from "./oryna"
 import { Effect, Layer, Context } from "effect"
 import { EffectBridge } from "@/effect/bridge"
 import { InstanceState } from "@/effect/instance-state"
@@ -80,6 +80,7 @@ function internalPlugins(flags: RuntimeFlags.Info): PluginInstance[] {
     DigitalOceanAuthPlugin,
     XaiAuthPlugin,
     OrynaAuthPlugin,
+    OrynaLocalProvider,
   ]
 }
 

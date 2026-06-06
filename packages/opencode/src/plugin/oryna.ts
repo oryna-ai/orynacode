@@ -112,6 +112,7 @@ async function startOAuthServer(): Promise<number> {
     <div class="icon">✓</div>
     <h1>Login Successful</h1>
     <p>You are now signed in to OrynaCode.<br>Return to the terminal to continue.</p>
+    <p style="margin-top: 16px;"><a href="https://oryna.ai/console" style="color: #00c4e9; text-decoration: none; font-weight: 500;">Open Oryna Console →</a></p>
     <div class="brand">OrynaCode</div>
   </div>
 </body>

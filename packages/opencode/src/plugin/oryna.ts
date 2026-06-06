@@ -80,14 +80,14 @@ async function startOAuthServer(): Promise<number> {
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    background: #060e14;
-    color: #e6f4f7;
+    background: #f8fafc;
+    color: #0f1a1e;
     display: flex; align-items: center; justify-content: center;
     min-height: 100vh; text-align: center;
   }
   .card {
-    background: #0c1822;
-    border: 1px solid #1e364c;
+    background: #fff;
+    border: 1px solid #e0f2f5;
     border-radius: 16px;
     padding: 48px 40px;
     max-width: 400px;
@@ -100,10 +100,11 @@ async function startOAuthServer(): Promise<number> {
     display: flex; align-items: center; justify-content: center;
     margin: 0 auto 24px;
     font-size: 32px;
+    color: #fff;
   }
-  h1 { font-size: 22px; font-weight: 600; margin-bottom: 8px; }
-  p { color: #7a9eaf; font-size: 14px; line-height: 1.6; }
-  .brand { margin-top: 24px; font-size: 12px; color: #32607c; }
+  h1 { font-size: 22px; font-weight: 600; margin-bottom: 8px; color: #003340; }
+  p { color: #5c7a84; font-size: 14px; line-height: 1.6; }
+  .brand { margin-top: 24px; font-size: 12px; color: #94c8d4; }
 </style>
 </head>
 <body>

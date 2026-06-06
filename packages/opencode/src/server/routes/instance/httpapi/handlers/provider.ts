@@ -74,12 +74,12 @@ export const providerHandlers = HttpApiBuilder.group(InstanceHttpApi, "provider"
         models: orynaRemote?.models ?? {},
       }
 
-      const proxyUrl = process.env.ORYNA_PROXY_URL
+      const localUrl = process.env.ORYNA_LOCAL_URL
       filtered["oryna-local"] = {
         id: "oryna-local",
         name: "Oryna Local",
         env: [],
-        api: proxyUrl ? `${proxyUrl.endsWith("/") ? proxyUrl.slice(0, -1) : proxyUrl}/v1` : "",
+        api: localUrl ? `${localUrl.endsWith("/") ? localUrl.slice(0, -1) : localUrl}/v1` : "",
         models: {},
       }
 

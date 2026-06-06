@@ -501,10 +501,10 @@ function ConnectLocal(props: { onClose: () => void }) {
   onMount(async () => {
     scanTimer = setInterval(() => setScanSeconds((s) => Math.max(0, s - 1)), 1000)
 
-    if (process.env.ORYNA_PROXY_URL) {
+    if (process.env.ORYNA_LOCAL_URL) {
       clearInterval(scanTimer)
-      setProxyUrl(process.env.ORYNA_PROXY_URL)
-      connect(process.env.ORYNA_PROXY_URL)
+      setProxyUrl(process.env.ORYNA_LOCAL_URL)
+      connect(process.env.ORYNA_LOCAL_URL)
       return
     }
     try {
@@ -529,7 +529,7 @@ function ConnectLocal(props: { onClose: () => void }) {
   onCleanup(() => clearInterval(scanTimer))
 
   async function connect(url: string) {
-    process.env.ORYNA_PROXY_URL = url
+    process.env.ORYNA_LOCAL_URL = url
     await sdk.client.auth.set({
       providerID: "oryna-local",
       auth: { type: "api", key: `sk-local-${process.env.USER || process.env.USERNAME || "user"}`, metadata: { url } },

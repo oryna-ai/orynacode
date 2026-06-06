@@ -330,7 +330,7 @@ export async function OrynaLocalProvider(_input: PluginInput): Promise<Hooks> {
       id: "oryna-local",
       name: "Oryna Local",
       async models(_provider, _ctx) {
-        const url = process.env.ORYNA_PROXY_URL
+        const url = process.env.ORYNA_LOCAL_URL
         if (!url) return {}
         try {
           const base = url.endsWith("/") ? url.slice(0, -1) : url

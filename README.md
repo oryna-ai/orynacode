@@ -4,8 +4,8 @@ OrynaCode is an AI coding agent built on top of [OpenCode](https://github.com/an
 
 ## Features
 
-- **Oryna AI** — Connect to Oryna's cloud API for access to DeepSeek, QWen, MiMo and more
-- **Oryna Router** — Auto-discover and connect to internal LLM proxies on your local network
+- **Oryna AI** — China's Best LLMs, Now Global.
+- **Oryna Local** — Auto-discover and connect to run models on your own infrastructure
 - **Browser Login** — One-click login via `https://oryna.ai` with JWT auto-refresh
 - **Terminal TUI** — Full interactive terminal interface with syntax highlighting and diff viewer
 

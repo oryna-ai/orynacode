@@ -131,15 +131,37 @@ export function createDialogProviderOptions() {
 
             if (providerID === "oryna-proxy") {
               const proxyUrl = process.env.ORYNA_PROXY_URL ?? (await scanLan().then((r) => r?.url))
-              if (!proxyUrl) {
-                toast.show({
-                  variant: "error",
-                  message: "No Oryna Local proxy found. Visit https://oryna.ai to download and install Oryna Local.",
+              if (proxyUrl) {
+                process.env.ORYNA_PROXY_URL = proxyUrl
+                await sdk.client.auth.set({
+                  providerID: "oryna-proxy",
+                  auth: { type: "api", key: "sk-oryna-local" },
                 })
+                await sdk.client.instance.dispose()
+                await sync.bootstrap()
+                dialog.replace(() => <DialogModel providerID={providerID} />)
+                return
+              }
+
+              const manual = await DialogPrompt.show(dialog, "Oryna Local", {
+                placeholder: "http://192.168.1.100:9527",
+                description: () => (
+                  <box gap={1}>
+                    <text fg={theme.textMuted}>
+                      No Oryna Local found on your network. Enter the IP and port manually, or visit
+                    </text>
+                    <text fg={theme.primary}>
+                      https://oryna.ai to download Oryna Local
+                    </text>
+                  </box>
+                ),
+              })
+              if (!manual) {
                 dialog.clear()
                 return
               }
-              process.env.ORYNA_PROXY_URL = proxyUrl
+              const url = manual.trim().replace(/\/+$/, "")
+              process.env.ORYNA_PROXY_URL = url
               await sdk.client.auth.set({
                 providerID: "oryna-proxy",
                 auth: { type: "api", key: "sk-oryna-local" },

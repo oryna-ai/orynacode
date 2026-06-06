@@ -85,14 +85,19 @@ export const configHandlers = HttpApiBuilder.group(InstanceHttpApi, "config", (h
         if (orynaIDs.has(id)) filtered[id] = info
       }
 
-      // fill in oryna-proxy models from local proxy when connected
-      if (process.env.ORYNA_PROXY_URL && (!filtered["oryna-proxy"] || Object.keys(filtered["oryna-proxy"].models ?? {}).length === 0)) {
+      const proxyUrl = process.env.ORYNA_PROXY_URL
+      if (proxyUrl) {
         const models = yield* Effect.tryPromise(() => fetchProxyModels()).pipe(
           Effect.catchCause(() => Effect.succeed({})),
         )
-        if (Object.keys(models).length > 0) {
-          const existing = filtered["oryna-proxy"] ?? { id: "oryna-proxy", name: "Oryna Local" }
-          filtered["oryna-proxy"] = { ...existing, models }
+        const api = proxyUrl.endsWith("/") ? proxyUrl.slice(0, -1) : proxyUrl
+        filtered["oryna-proxy"] = {
+          id: "oryna-proxy",
+          name: "Oryna Local",
+          env: [],
+          api: { url: `${api}/v1` },
+          models,
+          options: {},
         }
       }
 

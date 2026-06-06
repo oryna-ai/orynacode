@@ -471,20 +471,17 @@ function ConnectLocal(props: { onClose: () => void }) {
   const dialog = useDialog()
   const sdk = useSDK()
   const sync = useSync()
-  const [status, setStatus] = createSignal<"scanning" | "found" | "not-found" | "manual">("scanning")
+  const [status, setStatus] = createSignal<"scanning" | "found" | "not-found" | "validating" | "invalid">("scanning")
+  const [scanSeconds, setScanSeconds] = createSignal(0)
   const [proxyUrl, setProxyUrl] = createSignal("")
+  let scanTimer: any
   let textarea: any
 
-  async function handleManualConnect() {
-    const url = await DialogPrompt.show(dialog, "Oryna Local", {
-      placeholder: "http://192.168.1.100:9527",
-    })
-    if (!url) return
-    connect(url.trim().replace(/\/+$/, ""))
-  }
-
   onMount(async () => {
+    scanTimer = setInterval(() => setScanSeconds((s) => s + 1), 1000)
+
     if (process.env.ORYNA_PROXY_URL) {
+      clearInterval(scanTimer)
       setProxyUrl(process.env.ORYNA_PROXY_URL)
       connect(process.env.ORYNA_PROXY_URL)
       return
@@ -494,6 +491,7 @@ function ConnectLocal(props: { onClose: () => void }) {
         scanLan().then((r) => r?.url),
         new Promise<undefined>((r) => setTimeout(() => r(undefined), 15000)),
       ])
+      clearInterval(scanTimer)
       if (result) {
         setProxyUrl(result)
         setStatus("found")
@@ -502,9 +500,12 @@ function ConnectLocal(props: { onClose: () => void }) {
         setStatus("not-found")
       }
     } catch {
+      clearInterval(scanTimer)
       setStatus("not-found")
     }
   })
+
+  onCleanup(() => clearInterval(scanTimer))
 
   async function connect(url: string) {
     process.env.ORYNA_PROXY_URL = url
@@ -515,6 +516,23 @@ function ConnectLocal(props: { onClose: () => void }) {
     await sdk.client.instance.dispose()
     await sync.bootstrap()
     dialog.replace(() => <DialogModel providerID="oryna-proxy" />)
+  }
+
+  async function validateAndConnect() {
+    if (!textarea) return
+    const raw = textarea.plainText.trim().replace(/\/+$/, "")
+    if (!raw) return
+    setStatus("validating")
+    try {
+      const res = await fetch(`${raw}/api.json`, { signal: AbortSignal.timeout(5000) })
+      if (res.ok) {
+        connect(raw)
+      } else {
+        setStatus("invalid")
+      }
+    } catch {
+      setStatus("invalid")
+    }
   }
 
   return (
@@ -531,30 +549,54 @@ function ConnectLocal(props: { onClose: () => void }) {
       <Show when={status() === "scanning"}>
         <box flexGrow={1} alignItems="center" justifyContent="center" gap={1} paddingTop={2} paddingBottom={2}>
           <Spinner color={theme.primary} />
-          <text fg={theme.textMuted}>Scanning local network for Oryna Local...</text>
-          <text fg={theme.textMuted}>Looking for port 9527 in nearby subnets</text>
+          <text fg={theme.textMuted}>Scanning local network for Oryna Local ({scanSeconds()}s)</text>
+          <text fg={theme.textMuted}>Checking port 9527 in nearby subnets</text>
         </box>
       </Show>
 
       <Show when={status() === "found"}>
-        <box gap={1} paddingTop={1}>
+        <box gap={1} paddingTop={2}>
           <text fg={theme.success}>✓ Found Oryna Local</text>
           <text fg={theme.textMuted}>{proxyUrl()}</text>
           <text fg={theme.textMuted}>Connecting...</text>
         </box>
       </Show>
 
-      <Show when={status() === "not-found" || status() === "manual"}>
+      <Show when={status() === "not-found" || status() === "validating" || status() === "invalid"}>
         <box gap={1} paddingTop={1}>
           <Show when={status() === "not-found"}>
             <text fg={theme.warning}>No Oryna Local found on your network</text>
           </Show>
           <text fg={theme.textMuted}>
-            Visit <span style={{ fg: theme.primary }}>https://oryna.ai</span> to download Oryna Local
+            Enter the IP of your Oryna Local server, or visit
+            <span style={{ fg: theme.primary }}> https://oryna.ai </span>
+            to download
           </text>
-          <text fg={theme.primary} onMouseUp={() => handleManualConnect()}>
-            Enter IP manually
-          </text>
+          <textarea
+            ref={(val: any) => { textarea = val }}
+            height={3}
+            initialValue=""
+            placeholder="http://192.168.1.100:9527"
+            placeholderColor={theme.textMuted}
+            textColor={theme.text}
+            focusedTextColor={theme.text}
+            cursorColor={theme.text}
+          />
+          <Show when={status() === "validating"}>
+            <box flexDirection="row" gap={1}>
+              <Spinner color={theme.primary} />
+              <text fg={theme.textMuted}>Validating...</text>
+            </box>
+          </Show>
+          <Show when={status() === "invalid"}>
+            <text fg={theme.error}>Could not reach Oryna Local at this address</text>
+          </Show>
+          <box flexDirection="row" gap={2}>
+            <text fg={theme.primary} onMouseUp={validateAndConnect}>
+              ● Connect
+            </text>
+            <text fg={theme.textMuted}>enter</text>
+          </box>
         </box>
       </Show>
     </box>

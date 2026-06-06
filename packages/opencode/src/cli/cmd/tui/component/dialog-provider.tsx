@@ -17,6 +17,7 @@ import { useConnected } from "./use-connected"
 import { scanLan } from "@/util/lan-scan"
 import { Spinner } from "./spinner"
 import { useBindings } from "../keymap"
+import open from "open"
 
 const PROVIDER_PRIORITY: Record<string, number> = {
   oryna: 0,
@@ -585,8 +586,10 @@ function ConnectLocal(props: { onClose: () => void }) {
                 </text>
               </box>
               <box gap={1} paddingTop={1} flexDirection="row">
-                <text fg={theme.textMuted}>Don't have Oryna Local? Download at </text>
-                <Link href="https://oryna.ai">oryna.ai</Link>
+              <box gap={1} paddingTop={1} flexDirection="row">
+                <text fg={theme.textMuted}>Don't have Oryna Local? Download at</text>
+                <text fg={theme.primary} onMouseUp={() => open("https://oryna.ai").catch(() => {})}>oryna.ai</text>
+              </box>
               </box>
             </box>
           </Show>

@@ -1,4 +1,4 @@
-import { createMemo, createSignal, onCleanup, onMount, Show } from "solid-js"
+import { createMemo, createSignal, onCleanup, onMount, createEffect, Show } from "solid-js"
 import { useSync } from "@tui/context/sync"
 import { map, pipe, sortBy } from "remeda"
 import { DialogSelect } from "@tui/ui/dialog-select"
@@ -483,11 +483,20 @@ function ConnectLocal(props: { onClose: () => void }) {
   useBindings(() => ({
     target: textareaTarget,
     enabled: manual() && textareaTarget() !== undefined,
+    priority: 1,
     commands: [
       { name: "connect.local.submit", title: "Connect", category: "Dialog", run: () => { if (textarea) onManualConfirm(textarea.plainText) } },
     ],
     bindings: [{ key: "enter", group: "dialog.prompt" }],
   }))
+
+  createEffect(() => {
+    if (!manual() || !textarea || textarea.isDestroyed) return
+    setTimeout(() => {
+      if (!textarea || textarea.isDestroyed) return
+      textarea.focus()
+    }, 1)
+  })
 
   onMount(async () => {
     scanTimer = setInterval(() => setScanSeconds((s) => Math.max(0, s - 1)), 1000)

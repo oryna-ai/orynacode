@@ -109,7 +109,7 @@ const appBindingCommands = [
   "variant.list",
   "provider.connect",
   "console.org.switch",
-  "opencode.status",
+  "orynacode.status",
   "theme.switch",
   "theme.switch_mode",
   "theme.mode.lock",
@@ -753,7 +753,7 @@ function App(props: { onSnapshot?: () => Promise<string[]> }) {
           ]
         : []),
       {
-        name: "opencode.status",
+        name: "orynacode.status",
         title: "View status",
         slashName: "status",
         run: () => {

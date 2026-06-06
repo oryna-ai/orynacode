@@ -94,9 +94,9 @@ export const providerHandlers = HttpApiBuilder.group(InstanceHttpApi, "provider"
 
       filtered["oryna-proxy"] = {
         id: "oryna-proxy",
-        name: localRemote?.name ?? "Oryna Local",
+        name: "Oryna Local",
         env: [],
-        api: proxyUrl ? `${proxyUrl.endsWith("/") ? proxyUrl.slice(0, -1) : proxyUrl}/v1` : "",
+        api: localRemote?.api ?? (proxyUrl ? `${proxyUrl.endsWith("/") ? proxyUrl.slice(0, -1) : proxyUrl}/v1` : ""),
         models: localRemote?.models ?? {},
       }
 

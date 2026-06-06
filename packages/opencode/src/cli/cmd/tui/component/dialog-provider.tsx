@@ -476,6 +476,7 @@ function ConnectLocal(props: { onClose: () => void }) {
   const [proxyUrl, setProxyUrl] = createSignal("")
   const [manual, setManual] = createSignal(false)
   let scanTimer: any
+  let textarea: any
 
   onMount(async () => {
     scanTimer = setInterval(() => setScanSeconds((s) => Math.max(0, s - 1)), 1000)
@@ -593,7 +594,22 @@ function ConnectLocal(props: { onClose: () => void }) {
           </Show>
         </>
       }>
-        <DialogPrompt title="Enter Oryna Local Address" placeholder="http://192.168.1.100:9527" onConfirm={onManualConfirm} onCancel={() => setManual(false)} />
+        <box gap={1} paddingTop={1}>
+          <text fg={theme.textMuted}>Enter the IP and port of your Oryna Local server:</text>
+          <textarea
+            ref={(val: any) => textarea = val}
+            height={3}
+            placeholder="http://192.168.1.100:9527"
+            placeholderColor={theme.textMuted}
+            textColor={theme.text}
+            focusedTextColor={theme.text}
+            cursorColor={theme.text}
+          />
+          <box gap={2} flexDirection="row">
+            <text fg={theme.primary} onMouseUp={() => { if (textarea) onManualConfirm(textarea.plainText) }}>● Connect</text>
+            <text fg={theme.textMuted} onMouseUp={() => setManual(false)}>cancel</text>
+          </box>
+        </box>
       </Show>
     </box>
   )

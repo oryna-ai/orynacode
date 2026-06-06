@@ -93,6 +93,7 @@ export const configHandlers = HttpApiBuilder.group(InstanceHttpApi, "config", (h
           id: "oryna-local",
           name: "Oryna Local",
           env: [],
+          source: "api",
           api: proxyApi ? { url: proxyApi } : undefined,
           models,
           options: {},

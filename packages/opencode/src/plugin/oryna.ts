@@ -70,7 +70,51 @@ async function startOAuthServer(): Promise<number> {
 
       if (token && _pendingOAuth && state === _pendingOAuth.state) {
         res.writeHead(200, { "Content-Type": "text/html" })
-        res.end("<html><body><h1>Login successful!</h1><p>You can close this window.</p></body></html>")
+        res.end(`<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OrynaCode — Login Successful</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #060e14;
+    color: #e6f4f7;
+    display: flex; align-items: center; justify-content: center;
+    min-height: 100vh; text-align: center;
+  }
+  .card {
+    background: #0c1822;
+    border: 1px solid #1e364c;
+    border-radius: 16px;
+    padding: 48px 40px;
+    max-width: 400px;
+    width: 90%;
+  }
+  .icon {
+    width: 64px; height: 64px;
+    background: #00c4e9;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 24px;
+    font-size: 32px;
+  }
+  h1 { font-size: 22px; font-weight: 600; margin-bottom: 8px; }
+  p { color: #7a9eaf; font-size: 14px; line-height: 1.6; }
+  .brand { margin-top: 24px; font-size: 12px; color: #32607c; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon">✓</div>
+    <h1>Login Successful</h1>
+    <p>You are now signed in to OrynaCode.<br>Return to the terminal to continue.</p>
+    <div class="brand">OrynaCode</div>
+  </div>
+</body>
+</html>`)
         _pendingOAuth.resolve(token)
         return
       }

@@ -585,10 +585,9 @@ function ConnectLocal(props: { onClose: () => void }) {
                   ● Enter IP manually
                 </text>
               </box>
-              <box gap={1} paddingTop={1}>
-                <text fg={theme.textMuted}>Don't have Oryna Local installed?</text>
-                <text fg={theme.textMuted}>Download it from </text>
-                <Link href="https://oryna.ai" />
+              <box gap={1} paddingTop={1} flexDirection="row">
+                <text fg={theme.textMuted}>Don't have Oryna Local? Download at </text>
+                <Link href="https://oryna.ai">oryna.ai</Link>
               </box>
             </box>
           </Show>

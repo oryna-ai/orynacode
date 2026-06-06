@@ -487,7 +487,7 @@ function ConnectLocal(props: { onClose: () => void }) {
     commands: [
       { name: "connect.local.submit", title: "Connect", category: "Dialog", run: () => { if (textarea) onManualConfirm(textarea.plainText) } },
     ],
-    bindings: [{ key: "enter", group: "dialog.prompt" }],
+    bindings: [{ key: "enter" }],
   }))
 
   createEffect(() => {
@@ -629,6 +629,7 @@ function ConnectLocal(props: { onClose: () => void }) {
           />
           <box flexDirection="row" gap={2}>
             <text fg={theme.primary} onMouseUp={() => textarea && onManualConfirm(textarea.plainText)}>● Connect</text>
+            <text fg={theme.textMuted} onMouseUp={() => setManual(false)}>esc Cancel</text>
           </box>
         </box>
       </Show>

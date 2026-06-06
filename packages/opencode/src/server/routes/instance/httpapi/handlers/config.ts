@@ -114,7 +114,7 @@ export const configHandlers = HttpApiBuilder.group(InstanceHttpApi, "config", (h
         )
         const models = (raw as any).models ?? {}
         const localApi = (raw as any).api
-        filtered["oryna-local"] = {
+        const entry = {
           id: "oryna-local",
           name: "Oryna Local",
           env: [],
@@ -123,6 +123,8 @@ export const configHandlers = HttpApiBuilder.group(InstanceHttpApi, "config", (h
           models,
           options: {},
         }
+        filtered["oryna-local"] = entry
+        allProviders["oryna-local" as any] = Provider.toPublicInfo(entry as any)
       }
 
       const withModels = Object.fromEntries(

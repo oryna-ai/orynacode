@@ -1,4 +1,4 @@
-import { createMemo, createSignal, onCleanup, onMount, Show } from "solid-js"
+import { createMemo, createSignal, createEffect, onCleanup, onMount, Show } from "solid-js"
 import { useSync } from "@tui/context/sync"
 import { map, pipe, sortBy } from "remeda"
 import { DialogSelect } from "@tui/ui/dialog-select"
@@ -16,7 +16,7 @@ import { isConsoleManagedProvider } from "@tui/util/provider-origin"
 import { useConnected } from "./use-connected"
 import { scanLan } from "@/util/lan-scan"
 import { Spinner } from "./spinner"
-import { useBindings } from "../keymap"
+import { useBindings, useCommandShortcut } from "../keymap"
 
 const PROVIDER_PRIORITY: Record<string, number> = {
   oryna: 0,
@@ -474,8 +474,32 @@ function ConnectLocal(props: { onClose: () => void }) {
   const [status, setStatus] = createSignal<"scanning" | "found" | "not-found" | "validating" | "invalid">("scanning")
   const [scanSeconds, setScanSeconds] = createSignal(0)
   const [proxyUrl, setProxyUrl] = createSignal("")
+  const [textareaTarget, setTextareaTarget] = createSignal<any>()
   let scanTimer: any
   let textarea: any
+
+  const submitShortcut = useCommandShortcut("dialog.prompt.submit")
+
+  useBindings(() => ({
+    target: textareaTarget,
+    enabled: textareaTarget() !== undefined && (status() === "not-found" || status() === "invalid"),
+    priority: 1,
+    commands: [
+      {
+        name: "dialog.prompt.submit",
+        title: "Submit",
+        category: "Dialog",
+        run: validateAndConnect,
+      },
+    ],
+    bindings: [{ key: "enter", group: "dialog.prompt" }],
+  }))
+
+  createEffect(() => {
+    if (status() === "not-found" && textarea && !textarea.isDestroyed) {
+      setTimeout(() => textarea.focus(), 50)
+    }
+  })
 
   onMount(async () => {
     scanTimer = setInterval(() => setScanSeconds((s) => s + 1), 1000)
@@ -569,11 +593,11 @@ function ConnectLocal(props: { onClose: () => void }) {
           </Show>
           <text fg={theme.textMuted}>
             Enter the IP of your Oryna Local server, or visit
-            <span style={{ fg: theme.primary }}> https://oryna.ai </span>
+            <Link href="https://oryna.ai"> oryna.ai </Link>
             to download
           </text>
           <textarea
-            ref={(val: any) => { textarea = val }}
+            ref={(val: any) => { textarea = val; setTextareaTarget(val) }}
             height={3}
             initialValue=""
             placeholder="http://192.168.1.100:9527"

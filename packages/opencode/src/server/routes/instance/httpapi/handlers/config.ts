@@ -79,7 +79,7 @@ export const configHandlers = HttpApiBuilder.group(InstanceHttpApi, "config", (h
 
     const providers = Effect.fn("ConfigHttpApi.providers")(function* () {
       const allProviders = yield* providerSvc.list()
-      const orynaIDs = new Set(["oryna", "oryna-proxy"])
+      const orynaIDs = new Set(["oryna", "oryna-local"])
       const filtered: Record<string, any> = {}
       for (const [id, info] of Object.entries(allProviders)) {
         if (orynaIDs.has(id)) filtered[id] = info
@@ -91,8 +91,8 @@ export const configHandlers = HttpApiBuilder.group(InstanceHttpApi, "config", (h
           Effect.catchCause(() => Effect.succeed({})),
         )
         const api = proxyUrl.endsWith("/") ? proxyUrl.slice(0, -1) : proxyUrl
-        filtered["oryna-proxy"] = {
-          id: "oryna-proxy",
+        filtered["oryna-local"] = {
+          id: "oryna-local",
           name: "Oryna Local",
           env: [],
           api: { url: `${api}/v1` },

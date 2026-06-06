@@ -5,7 +5,7 @@ import { PluginV2 } from "../../plugin"
 import { ProviderV2 } from "../../provider"
 
 const ORYNA_ID = ProviderV2.ID.make("oryna")
-const PROXY_ID = ProviderV2.ID.make("oryna-proxy")
+const LOCAL_ID = ProviderV2.ID.make("oryna-local")
 
 export const OrynaPlugin = PluginV2.define({
   id: PluginV2.ID.make("oryna"),
@@ -44,7 +44,7 @@ export const OrynaPlugin = PluginV2.define({
         const base = configuredProxyUrl.endsWith("/")
           ? configuredProxyUrl.slice(0, -1)
           : configuredProxyUrl
-        catalog.provider.update(PROXY_ID, (provider) => {
+        catalog.provider.update(LOCAL_ID, (provider) => {
           provider.name = "Oryna (Internal)"
           provider.env = []
           provider.api = {
@@ -56,7 +56,7 @@ export const OrynaPlugin = PluginV2.define({
         })
       }
 
-      const orynaIDs = new Set([ORYNA_ID, PROXY_ID])
+      const orynaIDs = new Set([ORYNA_ID, LOCAL_ID])
       for (const item of catalog.provider.list()) {
         if (orynaIDs.has(item.provider.id)) continue
         catalog.provider.update(item.provider.id, (provider) => {

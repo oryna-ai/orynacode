@@ -75,8 +75,8 @@ export const providerHandlers = HttpApiBuilder.group(InstanceHttpApi, "provider"
       }
 
       const proxyUrl = process.env.ORYNA_PROXY_URL
-      filtered["oryna-proxy"] = {
-        id: "oryna-proxy",
+      filtered["oryna-local"] = {
+        id: "oryna-local",
         name: "Oryna Local",
         env: [],
         api: proxyUrl ? `${proxyUrl.endsWith("/") ? proxyUrl.slice(0, -1) : proxyUrl}/v1` : "",
@@ -84,7 +84,7 @@ export const providerHandlers = HttpApiBuilder.group(InstanceHttpApi, "provider"
       }
 
       const connected = yield* provider.list()
-      const orynaIDs = new Set(["oryna", "oryna-proxy"])
+      const orynaIDs = new Set(["oryna", "oryna-local"])
       const filteredConnected: Record<string, any> = {}
       for (const [id, info] of Object.entries(connected)) {
         if (orynaIDs.has(id)) filteredConnected[id] = info

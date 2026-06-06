@@ -327,7 +327,7 @@ export async function OrynaAuthPlugin(input: PluginInput): Promise<Hooks> {
 export async function OrynaLocalProvider(_input: PluginInput): Promise<Hooks> {
   return {
     provider: {
-      id: "oryna-proxy",
+      id: "oryna-local",
       name: "Oryna Local",
       async models(_provider, _ctx) {
         const url = process.env.ORYNA_PROXY_URL

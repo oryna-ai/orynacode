@@ -21,7 +21,7 @@ import open from "open"
 
 const PROVIDER_PRIORITY: Record<string, number> = {
   oryna: 0,
-  "oryna-proxy": 1,
+  "oryna-local": 1,
 }
 
 const CUSTOM_PROVIDER_OPTION_VALUE = "__opencode_custom_provider__"
@@ -55,7 +55,7 @@ export function providerOptions(list: { id: string; name: string }[]): ProviderO
         providerID: provider.id,
         description: {
           oryna: "Cloud API — China's Best LLMs, Now Global.",
-          "oryna-proxy": "Deploy on your own network",
+          "oryna-local": "Deploy on your own network",
         }[provider.id],
         category: "Oryna",
       })),
@@ -131,7 +131,7 @@ export function createDialogProviderOptions() {
           async onSelect() {
             if (consoleManaged) return
 
-            if (providerID === "oryna-proxy") {
+            if (providerID === "oryna-local") {
               dialog.replace(() => <ConnectLocal onClose={() => dialog.clear()} />)
               return
             }
@@ -531,12 +531,12 @@ function ConnectLocal(props: { onClose: () => void }) {
   async function connect(url: string) {
     process.env.ORYNA_PROXY_URL = url
     await sdk.client.auth.set({
-      providerID: "oryna-proxy",
+      providerID: "oryna-local",
       auth: { type: "api", key: `sk-local-${process.env.USER || process.env.USERNAME || "user"}` },
     })
     await sdk.client.instance.dispose()
     await sync.bootstrap()
-    dialog.replace(() => <DialogModel providerID="oryna-proxy" />)
+    dialog.replace(() => <DialogModel providerID="oryna-local" />)
   }
 
   async function onManualConfirm(value: string) {

@@ -54,7 +54,7 @@ export const ModelsCommand = effectCmd({
     }
 
     const ids = Object.keys(providers)
-      .filter((id) => id === "oryna" || id === "oryna-proxy")
+      .filter((id) => id === "oryna" || id === "oryna-local")
       .sort((a, b) => {
         if (a === "oryna") return -1
         if (b === "oryna") return 1

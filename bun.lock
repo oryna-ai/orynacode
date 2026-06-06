@@ -481,7 +481,7 @@
     },
     "packages/opencode": {
       "name": "opencode",
-      "version": "1.15.13",
+      "version": "1.0.0",
       "bin": {
         "orynacode": "./bin/orynacode",
       },

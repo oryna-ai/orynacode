@@ -55,7 +55,7 @@ export function providerOptions(list: { id: string; name: string }[]): ProviderO
           oryna: "Cloud API — DeepSeek, QWen, MiMo & more",
           "oryna-proxy": "Deploy on your own network",
         }[provider.id],
-        category: provider.id in PROVIDER_PRIORITY ? "Popular" : "Providers",
+        category: "Oryna",
       })),
     ),
   ]
@@ -232,7 +232,7 @@ export function createDialogProviderOptions() {
 
 export function DialogProvider() {
   const options = createDialogProviderOptions()
-  return <DialogSelect title="Connect a provider" options={options()} />
+  return <DialogSelect title="Connect" options={options()} />
 }
 
 interface AutoMethodProps {

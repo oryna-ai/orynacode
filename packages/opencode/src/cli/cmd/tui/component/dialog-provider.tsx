@@ -18,6 +18,7 @@ import { scanLan } from "@/util/lan-scan"
 import { Spinner } from "./spinner"
 import { useBindings } from "../keymap"
 import open from "open"
+import os from "os"
 
 const PROVIDER_PRIORITY: Record<string, number> = {
   oryna: 0,
@@ -532,7 +533,7 @@ function ConnectLocal(props: { onClose: () => void }) {
     process.env.ORYNA_LOCAL_URL = url
     await sdk.client.auth.set({
       providerID: "oryna-local",
-      auth: { type: "api", key: `sk-local-${process.env.USER || process.env.USERNAME || "user"}`, metadata: { url } },
+      auth: { type: "api", key: `sk-local-${os.userInfo().username || "user"}`, metadata: { url } },
     })
     await sdk.client.instance.dispose()
     await sync.bootstrap()

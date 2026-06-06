@@ -475,7 +475,6 @@ function ConnectLocal(props: { onClose: () => void }) {
   const [scanSeconds, setScanSeconds] = createSignal(15)
   const [proxyUrl, setProxyUrl] = createSignal("")
   let scanTimer: any
-  let textarea: any
 
   onMount(async () => {
     scanTimer = setInterval(() => setScanSeconds((s) => Math.max(0, s - 1)), 1000)
@@ -518,15 +517,17 @@ function ConnectLocal(props: { onClose: () => void }) {
     dialog.replace(() => <DialogModel providerID="oryna-proxy" />)
   }
 
-  async function validateAndConnect() {
-    if (!textarea) return
-    const raw = textarea.plainText.trim().replace(/\/+$/, "")
-    if (!raw) return
+  async function handleManualInput() {
+    const url = await DialogPrompt.show(dialog, "Enter Oryna Local Address", {
+      placeholder: "http://192.168.1.100:9527",
+    })
+    if (!url) return
+    const clean = url.trim().replace(/\/+$/, "")
     setStatus("validating")
     try {
-      const res = await fetch(`${raw}/api.json`, { signal: AbortSignal.timeout(5000) })
+      const res = await fetch(`${clean}/api.json`, { signal: AbortSignal.timeout(5000) })
       if (res.ok) {
-        connect(raw)
+        connect(clean)
       } else {
         setStatus("invalid")
       }
@@ -566,18 +567,8 @@ function ConnectLocal(props: { onClose: () => void }) {
         <box gap={1} paddingTop={1}>
           <Show when={status() === "not-found"}>
             <text fg={theme.warning}>No Oryna Local found on your network</text>
+            <text fg={theme.textMuted}>Oryna Local lets you run models on your own infrastructure.</text>
           </Show>
-          <text fg={theme.textMuted}>Enter the IP of your Oryna Local server:</text>
-          <textarea
-            ref={(val: any) => { textarea = val }}
-            height={3}
-            initialValue=""
-            placeholder="http://192.168.1.100:9527"
-            placeholderColor={theme.textMuted}
-            textColor={theme.text}
-            focusedTextColor={theme.text}
-            cursorColor={theme.text}
-          />
           <Show when={status() === "validating"}>
             <box flexDirection="row" gap={1}>
               <Spinner color={theme.primary} />
@@ -587,13 +578,15 @@ function ConnectLocal(props: { onClose: () => void }) {
           <Show when={status() === "invalid"}>
             <text fg={theme.error}>Could not reach Oryna Local at this address</text>
           </Show>
-          <box gap={2} flexDirection="row">
-            <text fg={theme.primary} onMouseUp={validateAndConnect}>
-              ● Connect
+          <box gap={2} paddingTop={1}>
+            <text fg={theme.primary} onMouseUp={handleManualInput}>
+              ● Enter IP manually
             </text>
-            <text fg={theme.textMuted}>enter</text>
           </box>
-          <Link href="https://oryna.ai" />
+          <box gap={1} paddingTop={1}>
+            <text fg={theme.textMuted}>Don't have Oryna Local installed?</text>
+            <Link href="https://oryna.ai" />
+          </box>
         </box>
       </Show>
     </box>

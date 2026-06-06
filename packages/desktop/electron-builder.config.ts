@@ -96,7 +96,7 @@ function getConfig() {
         appId: "ai.oryna.orynacode.beta",
         productName: "OrynaCode Beta",
         protocols: { name: "OrynaCode Beta", schemes: ["orynacode"] },
-        publish: { provider: "github", owner: "oryna-ai", repo: "opencode", channel: "latest" },
+        publish: { provider: "github", owner: "oryna-ai", repo: "orynacode-beta", channel: "latest" },
         rpm: { packageName: "orynacode-beta" },
       }
     }
@@ -106,7 +106,7 @@ function getConfig() {
         appId: "ai.oryna.orynacode",
         productName: "OrynaCode",
         protocols: { name: "OrynaCode", schemes: ["orynacode"] },
-        publish: { provider: "github", owner: "oryna-ai", repo: "opencode", channel: "latest" },
+        publish: { provider: "github", owner: "oryna-ai", repo: "orynacode", channel: "latest" },
         rpm: { packageName: "orynacode" },
       }
     }

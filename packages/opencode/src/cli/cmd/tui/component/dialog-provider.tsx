@@ -474,6 +474,7 @@ function ConnectLocal(props: { onClose: () => void }) {
   const [status, setStatus] = createSignal<"scanning" | "found" | "not-found" | "validating" | "invalid">("scanning")
   const [scanSeconds, setScanSeconds] = createSignal(15)
   const [proxyUrl, setProxyUrl] = createSignal("")
+  const [manual, setManual] = createSignal(false)
   let scanTimer: any
 
   onMount(async () => {
@@ -517,12 +518,10 @@ function ConnectLocal(props: { onClose: () => void }) {
     dialog.replace(() => <DialogModel providerID="oryna-proxy" />)
   }
 
-  async function handleManualInput() {
-    const url = await DialogPrompt.show(dialog, "Enter Oryna Local Address", {
-      placeholder: "http://192.168.1.100:9527",
-    })
-    if (!url) return
-    const clean = url.trim().replace(/\/+$/, "")
+  async function onManualConfirm(value: string) {
+    const clean = value.trim().replace(/\/+$/, "")
+    if (!clean) return
+    setManual(false)
     setStatus("validating")
     try {
       const res = await fetch(`${clean}/api.json`, { signal: AbortSignal.timeout(5000) })
@@ -547,47 +546,54 @@ function ConnectLocal(props: { onClose: () => void }) {
         </text>
       </box>
 
-      <Show when={status() === "scanning"}>
-        <box flexGrow={1} alignItems="center" justifyContent="center" gap={1} paddingTop={2} paddingBottom={2}>
-          <Spinner color={theme.primary} />
-          <text fg={theme.textMuted}>Scanning local network for Oryna Local ({scanSeconds()}s remaining)</text>
-          <text fg={theme.textMuted}>Checking port 9527 in nearby subnets</text>
-        </box>
-      </Show>
-
-      <Show when={status() === "found"}>
-        <box gap={1} paddingTop={2}>
-          <text fg={theme.success}>✓ Found Oryna Local</text>
-          <text fg={theme.textMuted}>{proxyUrl()}</text>
-          <text fg={theme.textMuted}>Connecting...</text>
-        </box>
-      </Show>
-
-      <Show when={status() === "not-found" || status() === "validating" || status() === "invalid"}>
-        <box gap={1} paddingTop={1}>
-          <Show when={status() === "not-found"}>
-            <text fg={theme.warning}>No Oryna Local found on your network</text>
-            <text fg={theme.textMuted}>Oryna Local lets you run models on your own infrastructure.</text>
-          </Show>
-          <Show when={status() === "validating"}>
-            <box flexDirection="row" gap={1}>
+      <Show when={manual()} fallback={
+        <>
+          <Show when={status() === "scanning"}>
+            <box flexGrow={1} alignItems="center" justifyContent="center" gap={1} paddingTop={2} paddingBottom={2}>
               <Spinner color={theme.primary} />
-              <text fg={theme.textMuted}>Validating...</text>
+              <text fg={theme.textMuted}>Scanning local network for Oryna Local ({scanSeconds()}s remaining)</text>
+              <text fg={theme.textMuted}>Checking port 9527 in nearby subnets</text>
             </box>
           </Show>
-          <Show when={status() === "invalid"}>
-            <text fg={theme.error}>Could not reach Oryna Local at this address</text>
+
+          <Show when={status() === "found"}>
+            <box gap={1} paddingTop={2}>
+              <text fg={theme.success}>✓ Found Oryna Local</text>
+              <text fg={theme.textMuted}>{proxyUrl()}</text>
+              <text fg={theme.textMuted}>Connecting...</text>
+            </box>
           </Show>
-          <box gap={2} paddingTop={1}>
-            <text fg={theme.primary} onMouseUp={handleManualInput}>
-              ● Enter IP manually
-            </text>
-          </box>
-          <box gap={1} paddingTop={1}>
-            <text fg={theme.textMuted}>Don't have Oryna Local installed?</text>
-            <Link href="https://oryna.ai" />
-          </box>
-        </box>
+
+          <Show when={status() === "not-found" || status() === "validating" || status() === "invalid"}>
+            <box gap={1} paddingTop={1}>
+              <Show when={status() === "not-found"}>
+                <text fg={theme.warning}>No Oryna Local found on your network</text>
+                <text fg={theme.textMuted}>Oryna Local lets you run models on your own infrastructure.</text>
+              </Show>
+              <Show when={status() === "validating"}>
+                <box flexDirection="row" gap={1}>
+                  <Spinner color={theme.primary} />
+                  <text fg={theme.textMuted}>Validating...</text>
+                </box>
+              </Show>
+              <Show when={status() === "invalid"}>
+                <text fg={theme.error}>Could not reach Oryna Local at this address</text>
+              </Show>
+              <box gap={2} paddingTop={1}>
+                <text fg={theme.primary} onMouseUp={() => setManual(true)}>
+                  ● Enter IP manually
+                </text>
+              </box>
+              <box gap={1} paddingTop={1}>
+                <text fg={theme.textMuted}>Don't have Oryna Local installed?</text>
+                <text fg={theme.textMuted}>Download it from </text>
+                <Link href="https://oryna.ai" />
+              </box>
+            </box>
+          </Show>
+        </>
+      }>
+        <DialogPrompt title="Enter Oryna Local Address" placeholder="http://192.168.1.100:9527" onConfirm={onManualConfirm} onCancel={() => setManual(false)} />
       </Show>
     </box>
   )

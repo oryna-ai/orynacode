@@ -629,7 +629,7 @@ function ConnectLocal(props: { onClose: () => void }) {
           />
           <box flexDirection="row" gap={2}>
             <text fg={theme.primary} onMouseUp={() => textarea && onManualConfirm(textarea.plainText)}>● Connect</text>
-            <text fg={theme.textMuted} onMouseUp={() => setManual(false)}>esc Cancel</text>
+            <text fg={theme.textMuted} onMouseUp={() => setManual(false)}>Cancel</text>
           </box>
         </box>
       </Show>

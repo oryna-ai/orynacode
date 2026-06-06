@@ -567,11 +567,7 @@ function ConnectLocal(props: { onClose: () => void }) {
           <Show when={status() === "not-found"}>
             <text fg={theme.warning}>No Oryna Local found on your network</text>
           </Show>
-          <text fg={theme.textMuted}>
-            Enter the IP of your Oryna Local server, or visit
-            <Link href="https://oryna.ai"> oryna.ai </Link>
-            to download
-          </text>
+          <text fg={theme.textMuted}>Enter the IP of your Oryna Local server:</text>
           <textarea
             ref={(val: any) => { textarea = val }}
             height={3}
@@ -591,12 +587,15 @@ function ConnectLocal(props: { onClose: () => void }) {
           <Show when={status() === "invalid"}>
             <text fg={theme.error}>Could not reach Oryna Local at this address</text>
           </Show>
-          <box flexDirection="row" gap={2}>
+          <box gap={2} flexDirection="row">
             <text fg={theme.primary} onMouseUp={validateAndConnect}>
               ● Connect
             </text>
             <text fg={theme.textMuted}>enter</text>
           </box>
+          <Link href="https://oryna.ai">
+            <text fg={theme.textMuted}>Download Oryna Local →</text>
+          </Link>
         </box>
       </Show>
     </box>

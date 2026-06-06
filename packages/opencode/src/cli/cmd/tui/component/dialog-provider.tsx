@@ -593,9 +593,7 @@ function ConnectLocal(props: { onClose: () => void }) {
             </text>
             <text fg={theme.textMuted}>enter</text>
           </box>
-          <Link href="https://oryna.ai">
-            <text fg={theme.textMuted}>Download Oryna Local →</text>
-          </Link>
+          <Link href="https://oryna.ai" />
         </box>
       </Show>
     </box>

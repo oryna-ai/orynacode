@@ -1,4 +1,4 @@
-import { createMemo, createSignal, createEffect, onCleanup, onMount, Show } from "solid-js"
+import { createMemo, createSignal, onCleanup, onMount, Show } from "solid-js"
 import { useSync } from "@tui/context/sync"
 import { map, pipe, sortBy } from "remeda"
 import { DialogSelect } from "@tui/ui/dialog-select"
@@ -16,7 +16,7 @@ import { isConsoleManagedProvider } from "@tui/util/provider-origin"
 import { useConnected } from "./use-connected"
 import { scanLan } from "@/util/lan-scan"
 import { Spinner } from "./spinner"
-import { useBindings, useCommandShortcut } from "../keymap"
+import { useBindings } from "../keymap"
 
 const PROVIDER_PRIORITY: Record<string, number> = {
   oryna: 0,
@@ -472,37 +472,13 @@ function ConnectLocal(props: { onClose: () => void }) {
   const sdk = useSDK()
   const sync = useSync()
   const [status, setStatus] = createSignal<"scanning" | "found" | "not-found" | "validating" | "invalid">("scanning")
-  const [scanSeconds, setScanSeconds] = createSignal(0)
+  const [scanSeconds, setScanSeconds] = createSignal(15)
   const [proxyUrl, setProxyUrl] = createSignal("")
-  const [textareaTarget, setTextareaTarget] = createSignal<any>()
   let scanTimer: any
   let textarea: any
 
-  const submitShortcut = useCommandShortcut("dialog.prompt.submit")
-
-  useBindings(() => ({
-    target: textareaTarget,
-    enabled: textareaTarget() !== undefined && (status() === "not-found" || status() === "invalid"),
-    priority: 1,
-    commands: [
-      {
-        name: "dialog.prompt.submit",
-        title: "Submit",
-        category: "Dialog",
-        run: validateAndConnect,
-      },
-    ],
-    bindings: [{ key: "enter", group: "dialog.prompt" }],
-  }))
-
-  createEffect(() => {
-    if (status() === "not-found" && textarea && !textarea.isDestroyed) {
-      setTimeout(() => textarea.focus(), 50)
-    }
-  })
-
   onMount(async () => {
-    scanTimer = setInterval(() => setScanSeconds((s) => s + 1), 1000)
+    scanTimer = setInterval(() => setScanSeconds((s) => Math.max(0, s - 1)), 1000)
 
     if (process.env.ORYNA_PROXY_URL) {
       clearInterval(scanTimer)
@@ -573,7 +549,7 @@ function ConnectLocal(props: { onClose: () => void }) {
       <Show when={status() === "scanning"}>
         <box flexGrow={1} alignItems="center" justifyContent="center" gap={1} paddingTop={2} paddingBottom={2}>
           <Spinner color={theme.primary} />
-          <text fg={theme.textMuted}>Scanning local network for Oryna Local ({scanSeconds()}s)</text>
+          <text fg={theme.textMuted}>Scanning local network for Oryna Local ({scanSeconds()}s remaining)</text>
           <text fg={theme.textMuted}>Checking port 9527 in nearby subnets</text>
         </box>
       </Show>
@@ -597,7 +573,7 @@ function ConnectLocal(props: { onClose: () => void }) {
             to download
           </text>
           <textarea
-            ref={(val: any) => { textarea = val; setTextareaTarget(val) }}
+            ref={(val: any) => { textarea = val }}
             height={3}
             initialValue=""
             placeholder="http://192.168.1.100:9527"

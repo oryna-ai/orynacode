@@ -10,6 +10,17 @@ import { InstanceHttpApi } from "../api"
 import { ProviderAuthApiError } from "../groups/provider"
 import { ProviderV2 } from "@opencode-ai/core/provider"
 
+async function loadLocalProxyModels(url: string): Promise<Record<string, any>> {
+  try {
+    const base = url.endsWith("/") ? url.slice(0, -1) : url
+    const res = await fetch(`${base}/api.json`, {
+      signal: AbortSignal.timeout(10000),
+    })
+    if (res.ok) return await res.json()
+  } catch {}
+  return {}
+}
+
 const ORYNA_MODELS_URL = "https://oryna.ai"
 const ORYNA_CACHE_TTL = 5 * 60 * 1000
 
@@ -75,12 +86,18 @@ export const providerHandlers = HttpApiBuilder.group(InstanceHttpApi, "provider"
       }
 
       const proxyUrl = process.env.ORYNA_PROXY_URL
+      const localModelsEffect = Effect.tryPromise(() =>
+        proxyUrl ? loadLocalProxyModels(proxyUrl) : Promise.resolve({} as Record<string, any>),
+      ).pipe(Effect.catchCause(() => Effect.succeed({} as Record<string, any>)))
+      const localModels = yield* localModelsEffect
+      const localRemote = localModels?.["oryna"]
+
       filtered["oryna-proxy"] = {
         id: "oryna-proxy",
-        name: "Oryna Local",
+        name: localRemote?.name ?? "Oryna Local",
         env: [],
         api: proxyUrl ? `${proxyUrl.endsWith("/") ? proxyUrl.slice(0, -1) : proxyUrl}/v1` : "",
-        models: {},
+        models: localRemote?.models ?? {},
       }
 
       const connected = yield* provider.list()

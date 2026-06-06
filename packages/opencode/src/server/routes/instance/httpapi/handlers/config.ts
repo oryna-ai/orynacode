@@ -15,6 +15,7 @@ function mapOrynaModels(data: Record<string, any>): Record<string, any> {
     result[id] = {
       id,
       name: m.name,
+      providerID: "oryna-local",
       family: m.family,
       api: { id, url: oryna.api ?? "", npm: oryna.npm ?? "@ai-sdk/openai-compatible" },
       capabilities: {

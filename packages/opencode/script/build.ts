@@ -114,10 +114,10 @@ const allTargets: {
 ]
 
 const targets = singleFlag
-  ? allTargets.filter((item) => {
-      if (item.os !== process.platform || item.arch !== process.arch) {
-        return false
-      }
+    ? allTargets.filter((item) => {
+        if (item.os !== process.platform || item.arch !== process.arch) {
+          return false
+        }
 
       // When building for the current platform, prefer a single native binary by default.
       // Baseline binaries require additional Bun artifacts and can be flaky to download.

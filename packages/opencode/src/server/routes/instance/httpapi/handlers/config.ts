@@ -6,26 +6,6 @@ import { HttpApiBuilder } from "effect/unstable/httpapi"
 import { InstanceHttpApi } from "../api"
 import { markInstanceForDisposal } from "../lifecycle"
 
-async function fetchProxyData(): Promise<{ api?: string; models: Record<string, any> }> {
-  const url = process.env.ORYNA_PROXY_URL
-  if (!url) return { models: {} }
-  try {
-    const base = url.endsWith("/") ? url.slice(0, -1) : url
-    const res = await fetch(`${base}/api.json`, {
-      signal: AbortSignal.timeout(10000),
-    })
-    if (res.ok) {
-      const data = await res.json()
-      const oryna = data?.oryna
-      return {
-        api: oryna?.api,
-        models: mapOrynaModels(data),
-      }
-    }
-  } catch {}
-  return { models: {} }
-}
-
 function mapOrynaModels(data: Record<string, any>): Record<string, any> {
   const oryna = data?.oryna
   if (!oryna?.models) return {}
@@ -66,6 +46,19 @@ function mapOrynaModels(data: Record<string, any>): Record<string, any> {
   return result
 }
 
+async function fetchProxyData(url: string): Promise<{ api?: string; models: Record<string, any> }> {
+  const base = url.endsWith("/") ? url.slice(0, -1) : url
+  const res = await fetch(`${base}/api.json`, {
+    signal: AbortSignal.timeout(10000),
+  })
+  if (res.ok) {
+    const data = await res.json()
+    const oryna = data?.oryna
+    return { api: oryna?.api, models: mapOrynaModels(data) }
+  }
+  return { models: {} }
+}
+
 export const configHandlers = HttpApiBuilder.group(InstanceHttpApi, "config", (handlers) =>
   Effect.gen(function* () {
     const providerSvc = yield* Provider.Service
@@ -91,10 +84,9 @@ export const configHandlers = HttpApiBuilder.group(InstanceHttpApi, "config", (h
 
       const proxyUrl = process.env.ORYNA_PROXY_URL
       if (proxyUrl) {
-        const raw = yield* Effect.tryPromise(async () => {
-          const data = await fetchProxyData()
-          return data
-        }).pipe(Effect.catchCause(() => Effect.succeed({ api: undefined, models: {} })))
+        const raw = yield* Effect.tryPromise(() => fetchProxyData(proxyUrl)).pipe(
+          Effect.catchCause(() => Effect.succeed({ api: undefined, models: {} })),
+        )
         const models = (raw as any).models ?? {}
         const proxyApi = (raw as any).api
         filtered["oryna-local"] = {

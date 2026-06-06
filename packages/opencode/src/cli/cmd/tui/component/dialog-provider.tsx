@@ -532,7 +532,7 @@ function ConnectLocal(props: { onClose: () => void }) {
     process.env.ORYNA_PROXY_URL = url
     await sdk.client.auth.set({
       providerID: "oryna-local",
-      auth: { type: "api", key: `sk-local-${process.env.USER || process.env.USERNAME || "user"}` },
+      auth: { type: "api", key: `sk-local-${process.env.USER || process.env.USERNAME || "user"}`, metadata: { url } },
     })
     await sdk.client.instance.dispose()
     await sync.bootstrap()

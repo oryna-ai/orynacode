@@ -130,7 +130,18 @@ export function createDialogProviderOptions() {
             if (consoleManaged) return
 
             if (providerID === "oryna-proxy") {
-              const proxyUrl = process.env.ORYNA_PROXY_URL ?? (await scanLan().then((r) => r?.url))
+              let proxyUrl = process.env.ORYNA_PROXY_URL
+              if (!proxyUrl) {
+                toast.show({ variant: "info", message: "Scanning for Oryna Local..." })
+                try {
+                  proxyUrl = await Promise.race([
+                    scanLan().then((r) => r?.url),
+                    new Promise<undefined>((r) => setTimeout(() => r(undefined), 15000)),
+                  ])
+                } catch {
+                  proxyUrl = undefined
+                }
+              }
               if (proxyUrl) {
                 process.env.ORYNA_PROXY_URL = proxyUrl
                 await sdk.client.auth.set({

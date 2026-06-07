@@ -70,6 +70,7 @@ async function scanSubnet(subnet: string, port: number): Promise<ScannerResult[]
     for (const result of results) {
       if (result) all.push(result)
     }
+    if (all.length > 0) return all
   }
   return all
 }

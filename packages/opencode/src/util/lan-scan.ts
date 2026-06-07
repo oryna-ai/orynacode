@@ -52,10 +52,11 @@ async function checkProxy(host: string, port: number): Promise<ScannerResult | u
   return undefined
 }
 
-async function scanSubnet(subnet: string, port: number): Promise<ScannerResult | undefined> {
+async function scanSubnet(subnet: string, port: number): Promise<ScannerResult[]> {
   const portTimeout = 200
   const concurrency = 30
   const hosts = new Array(254).fill(0).map((_, i) => `${subnet}.${i + 1}`)
+  const all: ScannerResult[] = []
 
   for (let i = 0; i < hosts.length; i += concurrency) {
     const batch = hosts.slice(i, i + concurrency)
@@ -67,21 +68,22 @@ async function scanSubnet(subnet: string, port: number): Promise<ScannerResult |
       }),
     )
     for (const result of results) {
-      if (result) return result
+      if (result) all.push(result)
     }
   }
-  return undefined
+  return all
 }
 
-export async function scanLan(): Promise<ScannerResult | undefined> {
+export async function scanLan(): Promise<ScannerResult[]> {
   const subnets = localSubnets()
-  if (subnets.length === 0) return undefined
+  if (subnets.length === 0) return []
 
   const port = 9527
+  const all: ScannerResult[] = []
   for (const subnet of subnets) {
-    const result = await scanSubnet(subnet, port)
-    if (result) return result
+    const results = await scanSubnet(subnet, port)
+    all.push(...results)
   }
 
-  return undefined
+  return all
 }

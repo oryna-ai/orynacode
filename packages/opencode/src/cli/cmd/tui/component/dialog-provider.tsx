@@ -1,4 +1,4 @@
-import { createMemo, createSignal, onCleanup, onMount, createEffect, Show } from "solid-js"
+import { createMemo, createSignal, onCleanup, onMount, createEffect, Show, For } from "solid-js"
 import { useSync } from "@tui/context/sync"
 import { map, pipe, sortBy } from "remeda"
 import { DialogSelect } from "@tui/ui/dialog-select"
@@ -18,6 +18,7 @@ import { scanLan } from "@/util/lan-scan"
 import { Spinner } from "./spinner"
 import { useBindings } from "../keymap"
 import open from "open"
+import path from "path"
 import os from "os"
 
 const PROVIDER_PRIORITY: Record<string, number> = {
@@ -473,13 +474,30 @@ function ConnectLocal(props: { onClose: () => void }) {
   const dialog = useDialog()
   const sdk = useSDK()
   const sync = useSync()
-  const [status, setStatus] = createSignal<"scanning" | "found" | "not-found" | "validating" | "invalid">("scanning")
+  const [status, setStatus] = createSignal<"scanning" | "found" | "multiple" | "not-found" | "validating" | "invalid">("scanning")
   const [scanSeconds, setScanSeconds] = createSignal(15)
-  const [proxyUrl, setProxyUrl] = createSignal("")
+  const [proxyUrls, setProxyUrls] = createSignal<string[]>([])
+  const [selectedIndex, setSelectedIndex] = createSignal(0)
   const [manual, setManual] = createSignal(false)
   const [textareaTarget, setTextareaTarget] = createSignal<any>()
   let scanTimer: any
   let textarea: any
+
+  useBindings(() => ({
+    enabled: status() === "multiple",
+    commands: [
+      { name: "connect.local.list.up", title: "Up", category: "Dialog", run: () => setSelectedIndex((i) => Math.max(0, i - 1)) },
+      { name: "connect.local.list.down", title: "Down", category: "Dialog", run: () => setSelectedIndex((i) => Math.min(proxyUrls().length - 1, i + 1)) },
+      { name: "connect.local.list.confirm", title: "Connect", category: "Dialog", run: () => connect(proxyUrls()[selectedIndex()]) },
+      { name: "connect.local.list.back", title: "Back", category: "Dialog", run: () => setStatus("not-found") },
+    ],
+    bindings: [
+      { key: "up", cmd: "connect.local.list.up" },
+      { key: "down", cmd: "connect.local.list.down" },
+      { key: "return", cmd: "connect.local.list.confirm" },
+      { key: "escape", cmd: "connect.local.list.back" },
+    ],
+  }))
 
   useBindings(() => ({
     target: textareaTarget,
@@ -502,22 +520,20 @@ function ConnectLocal(props: { onClose: () => void }) {
   onMount(async () => {
     scanTimer = setInterval(() => setScanSeconds((s) => Math.max(0, s - 1)), 1000)
 
-    if (process.env.ORYNA_LOCAL_URL) {
-      clearInterval(scanTimer)
-      setProxyUrl(process.env.ORYNA_LOCAL_URL)
-      connect(process.env.ORYNA_LOCAL_URL)
-      return
-    }
     try {
-      const result = await Promise.race([
-        scanLan().then((r) => r?.url),
-        new Promise<undefined>((r) => setTimeout(() => r(undefined), 15000)),
+      const results = await Promise.race([
+        scanLan(),
+        new Promise<Awaited<ReturnType<typeof scanLan>>>((r) => setTimeout(() => r([]), 15000)),
       ])
       clearInterval(scanTimer)
-      if (result) {
-        setProxyUrl(result)
+      if (results.length > 1) {
+        setProxyUrls(results.map((r) => r.url))
+        setStatus("multiple")
+      } else if (results.length === 1) {
+        const url = results[0].url
+        setProxyUrls([url])
         setStatus("found")
-        setTimeout(() => connect(result), 800)
+        setTimeout(() => connect(url), 800)
       } else {
         setStatus("not-found")
       }
@@ -533,7 +549,7 @@ function ConnectLocal(props: { onClose: () => void }) {
     process.env.ORYNA_LOCAL_URL = url
     await sdk.client.auth.set({
       providerID: "oryna-local",
-      auth: { type: "api", key: `sk-local-${os.userInfo().username || "user"}`, metadata: { url } },
+      auth: { type: "api", key: `sk-local-${os.userInfo().username || "user"}-${path.basename(process.cwd())}`, metadata: { url } },
     })
     await sdk.client.instance.dispose()
     await sync.bootstrap()
@@ -581,8 +597,38 @@ function ConnectLocal(props: { onClose: () => void }) {
           <Show when={status() === "found"}>
             <box gap={1} paddingTop={2}>
               <text fg={theme.success}>✓ Found Oryna Local</text>
-              <text fg={theme.textMuted}>{proxyUrl()}</text>
+              <text fg={theme.textMuted}>{proxyUrls()[0]}</text>
               <text fg={theme.textMuted}>Connecting...</text>
+            </box>
+          </Show>
+
+          <Show when={status() === "multiple"}>
+            <box gap={1} paddingTop={1}>
+              <box flexDirection="row" justifyContent="space-between">
+                <text fg={theme.success}>✓ Found {proxyUrls().length} Oryna Local servers</text>
+                <text fg={theme.textMuted} onMouseUp={() => setStatus("not-found")}>← Back</text>
+              </box>
+              <For each={proxyUrls()}>
+                {(url, index) => {
+                  const name = `Oryna Local (${new URL(url).hostname})`
+                  return (
+                    <box flexDirection="row" gap={1}>
+                      <text fg={selectedIndex() === index() ? theme.primary : theme.textMuted}>
+                        {selectedIndex() === index() ? "●" : "○"}
+                      </text>
+                      <text
+                        fg={selectedIndex() === index() ? theme.primary : theme.text}
+                        onMouseUp={() => connect(url)}
+                      >
+                        {name}
+                      </text>
+                    </box>
+                  )
+                }}
+              </For>
+              <box paddingTop={1}>
+                <text fg={theme.textMuted}>↑↓ to select · enter to connect · esc to go back</text>
+              </box>
             </box>
           </Show>
 

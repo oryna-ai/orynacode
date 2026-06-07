@@ -1,6 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/package.json",
-  "version": "1.0.0",
+  "version": "1.16.2",
   "name": "opencode",
   "type": "module",
   "license": "MIT",
@@ -90,7 +90,7 @@
     "@opencode-ai/sdk": "workspace:*",
     "@opencode-ai/server": "workspace:*",
     "@opencode-ai/ui": "workspace:*",
-    "@openrouter/ai-sdk-provider": "2.8.1",
+    "@openrouter/ai-sdk-provider": "2.9.0",
     "@opentelemetry/api": "1.9.0",
     "@opentelemetry/context-async-hooks": "2.6.1",
     "@opentelemetry/exporter-trace-otlp-http": "0.214.0",

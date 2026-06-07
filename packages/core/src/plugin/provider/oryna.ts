@@ -23,6 +23,10 @@ export const OrynaPlugin = PluginV2.define({
       configuredProxyUrl = entry.info.proxy?.url
     }
 
+    if (configuredProxyUrl && !process.env.ORYNA_LOCAL_URL) {
+      process.env.ORYNA_LOCAL_URL = configuredProxyUrl
+    }
+
     const transform = yield* catalog.transform()
 
     yield* transform((catalog) => {

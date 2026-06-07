@@ -92,6 +92,8 @@ import { SessionRetry } from "@/session/retry"
 import { getRevertDiffFiles } from "../../util/revert-diff"
 import { OPENCODE_BASE_MODE, useBindings, useCommandShortcut, useOpencodeKeymap } from "../../keymap"
 import { PathFormatterProvider, usePathFormatter } from "../../context/path-format"
+import { agentStatus } from "../../context/agent"
+import { start as startAgent, setMessageHandler } from "@/oryna/agent"
 
 addDefaultParsers(parsers.parsers)
 
@@ -1156,6 +1158,32 @@ export function Session() {
   // snap to bottom when session changes
   createEffect(on(() => route.sessionID, toBottom))
 
+  createEffect(() => {
+    const dir = session()?.directory
+    if (dir) process.env.ORYNA_AGENT_SESSION_ID = route.sessionID || ""
+  })
+
+  createEffect(() => {
+    const hasOrynaLocal = sync.data.provider.some((p) => p.id === "oryna-local")
+    if (!hasOrynaLocal) return
+
+    setMessageHandler(async (content) => {
+      let sessionID = process.env.ORYNA_AGENT_SESSION_ID
+      if (!sessionID) {
+        const created = await sdk.client.session.create({ title: "Oryna Agent" })
+        sessionID = created.data!.id
+        process.env.ORYNA_AGENT_SESSION_ID = sessionID
+        navigate({ type: "session", sessionID })
+      }
+      await sdk.client.session.prompt({
+        sessionID,
+        parts: [{ type: "text", text: content }],
+      })
+    })
+
+    startAgent()
+  })
+
   return (
     <PathFormatterProvider path={session()?.directory}>
       <context.Provider
@@ -1328,7 +1356,26 @@ export function Session() {
                         toBottom()
                       }}
                       sessionID={route.sessionID}
-                      right={<TuiPluginRuntime.Slot name="session_prompt_right" session_id={route.sessionID} />}
+                      right={
+                        <>
+                          <Show when={agentStatus().connected}>
+                            <text
+                              fg={agentStatus().processing ? theme.warning : theme.success}
+                            >
+                              {agentStatus().processing ? "◇" : "●"}{" "}
+                            </text>
+                            <text fg={theme.textMuted}>
+                              {agentStatus().processing
+                                ? "processing..."
+                                : `Collab · ${agentStatus().url}`}
+                            </text>
+                          </Show>
+                          <TuiPluginRuntime.Slot
+                            name="session_prompt_right"
+                            session_id={route.sessionID}
+                          />
+                        </>
+                      }
                     />
                   </TuiPluginRuntime.Slot>
                 </Show>

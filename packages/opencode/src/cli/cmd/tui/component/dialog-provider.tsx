@@ -15,6 +15,7 @@ import { useToast } from "../ui/toast"
 import { isConsoleManagedProvider } from "@tui/util/provider-origin"
 import { useConnected } from "./use-connected"
 import { scanLan } from "@/util/lan-scan"
+import { start as startAgent } from "@/oryna/agent"
 import { Spinner } from "./spinner"
 import { useBindings } from "../keymap"
 import open from "open"
@@ -554,6 +555,7 @@ function ConnectLocal(props: { onClose: () => void }) {
     await sdk.client.instance.dispose()
     await sync.bootstrap()
     dialog.replace(() => <DialogModel providerID="oryna-local" />)
+    startAgent()
   }
 
   async function onManualConfirm(value: string) {

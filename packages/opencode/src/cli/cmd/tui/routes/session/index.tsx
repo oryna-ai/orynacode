@@ -93,7 +93,7 @@ import { getRevertDiffFiles } from "../../util/revert-diff"
 import { OPENCODE_BASE_MODE, useBindings, useCommandShortcut, useOpencodeKeymap } from "../../keymap"
 import { PathFormatterProvider, usePathFormatter } from "../../context/path-format"
 import { agentStatus } from "../../context/agent"
-import { start as startAgent, setMessageHandler } from "@/oryna/agent"
+import { start as startAgent, setMessageHandler, stop as stopAgent } from "@/oryna/agent"
 
 addDefaultParsers(parsers.parsers)
 
@@ -1163,25 +1163,31 @@ export function Session() {
     if (dir) process.env.ORYNA_AGENT_SESSION_ID = route.sessionID || ""
   })
 
-  createEffect(() => {
-    const hasOrynaLocal = sync.data.provider.some((p) => p.id === "oryna-local")
-    if (!hasOrynaLocal) return
-
-    setMessageHandler(async (content) => {
-      let sessionID = process.env.ORYNA_AGENT_SESSION_ID
-      if (!sessionID) {
-        const created = await sdk.client.session.create({ title: "Oryna Agent" })
-        sessionID = created.data!.id
-        process.env.ORYNA_AGENT_SESSION_ID = sessionID
-        navigate({ type: "session", sessionID })
-      }
-      await sdk.client.session.prompt({
-        sessionID,
-        parts: [{ type: "text", text: content }],
-      })
+  // register message handler once
+  setMessageHandler(async (content) => {
+    let sessionID = process.env.ORYNA_AGENT_SESSION_ID
+    if (!sessionID) {
+      const created = await sdk.client.session.create({})
+      sessionID = created.data!.id
+      process.env.ORYNA_AGENT_SESSION_ID = sessionID
+      navigate({ type: "session", sessionID })
+    }
+    const model = local.model.current()
+    await sdk.client.session.prompt({
+      sessionID,
+      parts: [{ type: "text", text: content }],
+      ...(model ? { model: { providerID: model.providerID, modelID: model.modelID } } : {}),
     })
+  })
 
-    startAgent()
+  // connect/disconnect WS based on selected model
+  createEffect(() => {
+    const model = local.model.current()
+    if (model?.providerID === "oryna-local") {
+      startAgent()
+    } else {
+      stopAgent()
+    }
   })
 
   return (

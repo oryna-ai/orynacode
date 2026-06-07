@@ -1,6 +1,7 @@
 import { Prompt, type PromptRef } from "@tui/component/prompt"
-import { createEffect, createMemo, createSignal, onMount } from "solid-js"
+import { createEffect, createMemo, createSignal, onMount, Show } from "solid-js"
 import { Logo } from "../component/logo"
+import { useTheme } from "../context/theme"
 import { useSync } from "../context/sync"
 import { Toast } from "../ui/toast"
 import { useArgs } from "../context/args"
@@ -12,6 +13,10 @@ import { useEditorContext } from "@tui/context/editor"
 import { useTerminalDimensions } from "@opentui/solid"
 import { useTuiConfig } from "../context/tui-config"
 import { HomeSessionDestinationProvider } from "./home/session-destination"
+import { agentStatus } from "../context/agent"
+import { start as startAgent, setMessageHandler, stop as stopAgent } from "@/oryna/agent"
+import { useSDK } from "@tui/context/sdk"
+import { useRoute } from "@tui/context/route"
 
 let once = false
 const placeholder = {
@@ -22,6 +27,7 @@ const placeholder = {
 export function Home() {
   const sync = useSync()
   const route = useRouteData("home")
+  const { theme } = useTheme()
   const promptRef = usePromptRef()
   const [ref, setRef] = createSignal<PromptRef | undefined>()
   const args = useArgs()
@@ -29,6 +35,8 @@ export function Home() {
   const editor = useEditorContext()
   const dimensions = useTerminalDimensions()
   const tuiConfig = useTuiConfig()
+  const sdk = useSDK()
+  const { navigate } = useRoute()
   const promptMaxWidth = createMemo(() => {
     const configured = tuiConfig.prompt?.max_width
     if (configured === "auto") return Math.max(75, Math.floor(dimensions().width * 0.7))
@@ -38,6 +46,33 @@ export function Home() {
 
   onMount(() => {
     editor.clearSelection()
+  })
+
+  // register message handler once
+  setMessageHandler(async (content) => {
+    let sessionID = process.env.ORYNA_AGENT_SESSION_ID
+    if (!sessionID) {
+      const created = await sdk.client.session.create({})
+      sessionID = created.data!.id
+      process.env.ORYNA_AGENT_SESSION_ID = sessionID
+      navigate({ type: "session", sessionID })
+    }
+    const model = local.model.current()
+    await sdk.client.session.prompt({
+      sessionID,
+      parts: [{ type: "text", text: content }],
+      ...(model ? { model: { providerID: model.providerID, modelID: model.modelID } } : {}),
+    })
+  })
+
+  // connect/disconnect WS based on selected model
+  createEffect(() => {
+    const model = local.model.current()
+    if (model?.providerID === "oryna-local") {
+      startAgent()
+    } else {
+      stopAgent()
+    }
   })
 
   const bind = (r: PromptRef | undefined) => {
@@ -79,7 +114,21 @@ export function Home() {
         <box height={1} minHeight={0} flexShrink={1} />
         <box width="100%" maxWidth={promptMaxWidth()} zIndex={1000} paddingTop={1} flexShrink={0}>
           <TuiPluginRuntime.Slot name="home_prompt" mode="replace" ref={bind}>
-            <Prompt ref={bind} right={<TuiPluginRuntime.Slot name="home_prompt_right" />} placeholders={placeholder} />
+            <Prompt ref={bind} right={
+              <>
+                <Show when={agentStatus().connected}>
+                  <text fg={agentStatus().processing ? theme.warning : theme.success}>
+                    {agentStatus().processing ? "◇" : "●"}{" "}
+                  </text>
+                  <text fg={theme.textMuted}>
+                    {agentStatus().processing
+                      ? "processing..."
+                      : `Collab · ${agentStatus().url}`}
+                  </text>
+                </Show>
+                <TuiPluginRuntime.Slot name="home_prompt_right" />
+              </>
+            } placeholders={placeholder} />
           </TuiPluginRuntime.Slot>
         </box>
         <TuiPluginRuntime.Slot name="home_bottom" />

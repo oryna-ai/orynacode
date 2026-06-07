@@ -6,6 +6,7 @@ import path from "path"
 let ws: WebSocket | null = null
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null
 let heartbeatTimer: ReturnType<typeof setInterval> | null = null
+let stopped = false
 let onMessage: ((msg: string) => Promise<void>) | null = null
 
 export function setMessageHandler(fn: (msg: string) => Promise<void>) {
@@ -39,6 +40,7 @@ function cleanup() {
 }
 
 export function start() {
+  stopped = false
   const url = process.env.ORYNA_LOCAL_URL || readAuthUrl()
   if (!url) return
 
@@ -83,14 +85,14 @@ export function start() {
     })
 
     socket.addEventListener("close", () => {
-      ws = null
+      if (ws === socket) ws = null
       setAgentStatus({ connected: false, processing: false, url: host })
-      reconnectTimer = setTimeout(connect, 3000)
+      if (!stopped) reconnectTimer = setTimeout(connect, 3000)
     })
 
     socket.addEventListener("error", () => {
       socket.close()
-      ws = null
+      if (ws === socket) ws = null
     })
   }
 
@@ -98,6 +100,7 @@ export function start() {
 }
 
 export function stop() {
+  stopped = true
   cleanup()
   setAgentStatus({ connected: false, processing: false, url: "" })
 }

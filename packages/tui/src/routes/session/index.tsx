@@ -1358,11 +1358,11 @@ export function Session() {
                             <text
                               fg={agentStatus().processing ? theme.warning : agentStatus().ready ? theme.success : theme.textMuted}
                             >
-                              {agentStatus().processing ? "◇" : agentStatus().ready ? "●" : "○"}{" "}
+                              {agentStatus().processing ? "◇" : "●"}{" "}
                             </text>
                             <text fg={theme.textMuted}>
                               {agentStatus().processing
-                                ? "processing..."
+                                ? "Processing..."
                                 : agentStatus().ready
                                   ? `Collab · ${agentStatus().url}`
                                   : `idle · ${agentStatus().url}`}

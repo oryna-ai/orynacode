@@ -66,6 +66,7 @@ export type PromptProps = {
   hint?: JSX.Element
   right?: JSX.Element
   showPlaceholder?: boolean
+  minHeight?: number
   placeholders?: {
     normal?: string[]
     shell?: string[]
@@ -1356,7 +1357,7 @@ export function Prompt(props: PromptProps) {
               placeholderColor={theme.textMuted}
               textColor={leader() ? theme.textMuted : theme.text}
               focusedTextColor={leader() ? theme.textMuted : theme.text}
-              minHeight={1}
+              minHeight={props.minHeight ?? 1}
               maxHeight={maxHeight()}
               onContentChange={() => {
                 const value = input.plainText

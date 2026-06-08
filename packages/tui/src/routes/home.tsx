@@ -97,15 +97,15 @@ export function Home() {
         <box height={1} minHeight={0} flexShrink={1} />
         <box width="100%" maxWidth={promptMaxWidth()} zIndex={1000} paddingTop={1} flexShrink={0}>
           <pluginRuntime.Slot name="home_prompt" mode="replace" ref={bind}>
-            <Prompt ref={bind} right={
+            <Prompt ref={bind} minHeight={3} right={
               <>
                 <Show when={agentStatus().connected}>
                   <text fg={agentStatus().processing ? theme.warning : agentStatus().ready ? theme.success : theme.textMuted}>
-                    {agentStatus().processing ? "◇" : agentStatus().ready ? "●" : "○"}{" "}
+                    {agentStatus().processing ? "◇" : "●"}{""}
                   </text>
                   <text fg={theme.textMuted}>
                     {agentStatus().processing
-                      ? "processing..."
+                      ? "Processing..."
                       : agentStatus().ready
                         ? `Collab · ${agentStatus().url}`
                         : `idle · ${agentStatus().url}`}

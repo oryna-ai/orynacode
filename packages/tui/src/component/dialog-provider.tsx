@@ -17,12 +17,14 @@ import { useBindings } from "../keymap"
 import { useClipboard } from "../context/clipboard"
 
 const PROVIDER_PRIORITY: Record<string, number> = {
-  opencode: 0,
-  "opencode-go": 1,
-  openai: 2,
-  "github-copilot": 3,
-  anthropic: 4,
-  google: 5,
+  oryna: 0,
+  orynagate: 1,
+  opencode: 2,
+  "opencode-go": 3,
+  openai: 4,
+  "github-copilot": 5,
+  anthropic: 6,
+  google: 7,
 }
 
 const CUSTOM_PROVIDER_OPTION_VALUE = "__opencode_custom_provider__"
@@ -59,6 +61,8 @@ export function providerOptions(list: { id: string; name: string }[]): ProviderO
         value: provider.id,
         providerID: provider.id,
         description: {
+          oryna: "Oryna Cloud API — Best LLMs, Global.",
+          orynagate: "Deploy on your own network",
           opencode: "(Recommended)",
           anthropic: "(API key)",
           openai: "(ChatGPT Plus/Pro or API key)",

@@ -13,7 +13,7 @@ export const ReplyTool = Tool.define(
   Effect.gen(function* () {
     return {
       description:
-        "Send a reply back to an incoming collaboration message. Use this tool after completing a collaborative task to report results.",
+        "*** Reply to a collaboration message. You MUST call this tool after completing a collaborative task. Do NOT output your response as regular text. ***",
       parameters: Parameters,
       execute: (params: Schema.Schema.Type<typeof Parameters>, _ctx: Tool.Context) =>
         Effect.gen(function* () {

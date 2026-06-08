@@ -27,7 +27,7 @@ function randomPort(): Promise<number> {
 function randomState(): string {
   const bytes = new Uint8Array(16)
   crypto.getRandomValues(bytes)
-  return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("")
+  return "oc_" + Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("")
 }
 
 function parseJwtPayload(token: string): Record<string, unknown> | undefined {

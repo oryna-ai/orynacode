@@ -1,6 +1,5 @@
-import { readFileSync } from "fs"
+import { readFileSync, writeFileSync } from "fs"
 import { setAgentStatus, agentStatus } from "./agent-signal"
-import { drainReplies } from "./reply-service"
 import os from "os"
 import path from "path"
 
@@ -9,10 +8,11 @@ export function setReady(ready: boolean) {
   setAgentStatus({ ...s, ready })
 }
 
+const REPLY_FILE = "/tmp/oryna-reply"
 let ws: WebSocket | null = null
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null
 let heartbeatTimer: ReturnType<typeof setInterval> | null = null
-let drainTimer: ReturnType<typeof setInterval> | null = null
+let replyWatchTimer: ReturnType<typeof setInterval> | null = null
 let stopped = false
 let connecting = false
 let onMessage: ((content: string, from: string) => Promise<void>) | null = null
@@ -32,17 +32,29 @@ function readAuthUrl(): string | undefined {
   return undefined
 }
 
-function startDrain() {
-  if (drainTimer) return
-  drainTimer = setInterval(() => {
-    const lines = drainReplies()
-    for (const line of lines) {
-      if (ws?.readyState === WebSocket.OPEN) ws.send(line)
-    }
+function startReplyWatch() {
+  if (replyWatchTimer) return
+  let offset = 0
+  replyWatchTimer = setInterval(() => {
+    try {
+      const raw = readFileSync(REPLY_FILE, "utf-8")
+      const lines = raw.split("\n")
+      let sent = 0
+      for (let i = offset; i < lines.length; i++) {
+        const line = lines[i].trim()
+        if (!line) continue
+        if (ws?.readyState === WebSocket.OPEN) {
+          ws.send(line)
+          sent++
+        }
+      }
+      offset += sent
+    } catch {}
   }, 300)
 }
 
 export function start() {
+  try { writeFileSync(REPLY_FILE, "") } catch {}
   stopped = false
   const url = process.env.ORYNA_GATE_URL || readAuthUrl()
   if (!url) return
@@ -59,7 +71,7 @@ export function start() {
     ws = socket
 
     socket.addEventListener("open", () => {
-      startDrain()
+      startReplyWatch()
       setAgentStatus({ connected: true, processing: false, ready: false, url: host })
       heartbeatTimer = setInterval(() => {
         if (socket.readyState === WebSocket.OPEN) socket.send("__PING__")
@@ -103,7 +115,7 @@ export function stop() {
   stopped = true
   if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null }
   if (heartbeatTimer) { clearInterval(heartbeatTimer); heartbeatTimer = null }
-  if (drainTimer) { clearInterval(drainTimer); drainTimer = null }
+  if (replyWatchTimer) { clearInterval(replyWatchTimer); replyWatchTimer = null }
   if (ws) { ws.close(); ws = null }
   setAgentStatus({ connected: false, processing: false, ready: false, url: "" })
 }

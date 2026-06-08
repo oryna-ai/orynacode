@@ -175,7 +175,7 @@ for (const item of targets) {
     format: "esm",
     minify: true,
     sourcemap: sourcemapsFlag ? "linked" : "none",
-    splitting: false,
+    splitting: true,
     compile: {
       autoloadBunfig: false,
       autoloadDotenv: false,

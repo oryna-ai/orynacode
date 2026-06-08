@@ -1144,6 +1144,44 @@ export function Session() {
   // snap to bottom when session changes
   createEffect(on(() => route.sessionID, toBottom))
 
+  // sync current session to Agent WebSocket
+  createEffect(() => {
+    process.env.ORYNA_GATE_AGENT_SESSION_ID = route.sessionID || ""
+  })
+
+  // register message handler once
+  setMessageHandler(async (content: string, from: string) => {
+    let sessionID = process.env.ORYNA_GATE_AGENT_SESSION_ID
+    if (!sessionID) {
+      const created = await sdk.client.session.create({})
+      sessionID = created.data!.id
+      process.env.ORYNA_GATE_AGENT_SESSION_ID = sessionID
+      navigate({ type: "session", sessionID })
+    }
+    const model = local.model.current()
+    await sdk.client.session.prompt({
+      sessionID,
+      parts: [{
+        type: "text",
+        text: `[Collaboration from ${from}]\n${content}\n\nComplete the task above. When finished, call the "reply" tool to report results.`,
+      }],
+      ...(model ? { model: { providerID: model.providerID, modelID: model.modelID } } : {}),
+    })
+  })
+
+  // connect/disconnect WS based on selected model
+  let lastWasOrynaGate = false
+  createEffect(() => {
+    const model = local.model.current()
+    const isOrynaGate = model?.providerID === "orynagate"
+    if (isOrynaGate && !lastWasOrynaGate) {
+      startAgent()
+    } else if (!isOrynaGate && lastWasOrynaGate) {
+      stopAgent()
+    }
+    lastWasOrynaGate = isOrynaGate
+  })
+
   return (
     <PathFormatterProvider path={session()?.directory}>
       <context.Provider
@@ -1316,7 +1354,26 @@ export function Session() {
                         toBottom()
                       }}
                       sessionID={route.sessionID}
-                      right={<pluginRuntime.Slot name="session_prompt_right" session_id={route.sessionID} />}
+                      right={
+                        <>
+                          <Show when={agentStatus().connected}>
+                            <text
+                              fg={agentStatus().processing ? theme.warning : theme.success}
+                            >
+                              {agentStatus().processing ? "◇" : "●"}{" "}
+                            </text>
+                            <text fg={theme.textMuted}>
+                              {agentStatus().processing
+                                ? "processing..."
+                                : `Collab · ${agentStatus().url}`}
+                            </text>
+                          </Show>
+                          <pluginRuntime.Slot
+                            name="session_prompt_right"
+                            session_id={route.sessionID}
+                          />
+                        </>
+                      }
                     />
                   </pluginRuntime.Slot>
                 </Show>

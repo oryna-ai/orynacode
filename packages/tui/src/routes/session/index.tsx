@@ -74,7 +74,7 @@ import { setPreLayoutSiblingMargin } from "../../util/layout"
 import { useTuiConfig } from "../../config"
 import { useClipboard } from "../../context/clipboard"
 import { agentStatus } from "../../context/agent"
-import { start as startAgent, setMessageHandler, stop as stopAgent } from "orynacode-ai/oryna/agent"
+import { start as startAgent, setMessageHandler, stop as stopAgent, setReady } from "orynacode-ai/oryna/agent"
 import { nextThinkingMode, reasoningSummary, useThinkingMode, type ThinkingMode } from "../../context/thinking"
 import { getScrollAcceleration } from "../../util/scroll"
 import { collapseToolOutput } from "../../util/collapse-tool-output"
@@ -200,6 +200,8 @@ export function Session() {
     setEpilogue(sessionEpilogue({ title, sessionID: session()?.id }))
   })
   onCleanup(() => setEpilogue())
+  setReady(true)
+  onCleanup(() => setReady(false))
   const children = createMemo(() => {
     const parentID = session()?.parentID ?? session()?.id
     return sync.data.session
@@ -1354,14 +1356,16 @@ export function Session() {
                         <>
                           <Show when={agentStatus().connected}>
                             <text
-                              fg={agentStatus().processing ? theme.warning : theme.success}
+                              fg={agentStatus().processing ? theme.warning : agentStatus().ready ? theme.success : theme.textMuted}
                             >
-                              {agentStatus().processing ? "◇" : "●"}{" "}
+                              {agentStatus().processing ? "◇" : agentStatus().ready ? "●" : "○"}{" "}
                             </text>
                             <text fg={theme.textMuted}>
                               {agentStatus().processing
                                 ? "processing..."
-                                : `Collab · ${agentStatus().url}`}
+                                : agentStatus().ready
+                                  ? `Collab · ${agentStatus().url}`
+                                  : `idle · ${agentStatus().url}`}
                             </text>
                           </Show>
                           <pluginRuntime.Slot

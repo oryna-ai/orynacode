@@ -14,7 +14,7 @@ import { useTerminalDimensions } from "@opentui/solid"
 import { useTuiConfig } from "../config"
 import { HomeSessionDestinationProvider } from "./home/session-destination"
 import { agentStatus } from "../context/agent"
-import { start as startAgent, stop as stopAgent } from "orynacode-ai/oryna/agent"
+import { start as startAgent, stop as stopAgent, setReady } from "orynacode-ai/oryna/agent"
 
 let once = false
 const placeholder = {
@@ -43,6 +43,7 @@ export function Home() {
 
   onMount(() => {
     editor.clearSelection()
+    setReady(false)
   })
 
   let lastWasOrynaGate = false
@@ -99,11 +100,15 @@ export function Home() {
             <Prompt ref={bind} right={
               <>
                 <Show when={agentStatus().connected}>
-                  <text fg={agentStatus().processing ? theme.warning : theme.success}>
-                    {agentStatus().processing ? "◇" : "●"}{" "}
+                  <text fg={agentStatus().processing ? theme.warning : agentStatus().ready ? theme.success : theme.textMuted}>
+                    {agentStatus().processing ? "◇" : agentStatus().ready ? "●" : "○"}{" "}
                   </text>
                   <text fg={theme.textMuted}>
-                    {agentStatus().processing ? "processing..." : `Collab · ${agentStatus().url}`}
+                    {agentStatus().processing
+                      ? "processing..."
+                      : agentStatus().ready
+                        ? `Collab · ${agentStatus().url}`
+                        : `idle · ${agentStatus().url}`}
                   </text>
                 </Show>
                 <pluginRuntime.Slot name="home_prompt_right" />

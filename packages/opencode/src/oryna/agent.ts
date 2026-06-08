@@ -1,7 +1,12 @@
 import { readFileSync } from "fs"
-import { setAgentStatus } from "./agent-signal"
+import { setAgentStatus, agentStatus } from "./agent-signal"
 import os from "os"
 import path from "path"
+
+export function setReady(ready: boolean) {
+  const s = agentStatus()
+  setAgentStatus({ ...s, ready })
+}
 
 const REPLY_FILE = "/tmp/oryna-reply"
 let ws: WebSocket | null = null
@@ -62,7 +67,7 @@ export function start() {
 
     socket.addEventListener("open", () => {
       startReplyWatch()
-      setAgentStatus({ connected: true, processing: false, url: host })
+      setAgentStatus({ connected: true, processing: false, ready: false, url: host })
       heartbeatTimer = setInterval(() => {
         if (socket.readyState === WebSocket.OPEN) socket.send("__PING__")
       }, 30000)
@@ -80,16 +85,16 @@ export function start() {
         const from = msg.data?.from || "unknown"
         if (!content) return
 
-        setTimeout(() => setAgentStatus({ connected: true, processing: true, url: host }), 0)
+        setTimeout(() => setAgentStatus({ connected: true, processing: true, ready: false, url: host }), 0)
         if (onMessage) await onMessage(content, from)
-        setTimeout(() => setAgentStatus({ connected: true, processing: false, url: host }), 0)
+        setTimeout(() => setAgentStatus({ connected: true, processing: false, ready: false, url: host }), 0)
       } catch {}
     })
 
     socket.addEventListener("close", () => {
       connecting = false
       ws = null
-      setAgentStatus({ connected: false, processing: false, url: host })
+      setAgentStatus({ connected: false, processing: false, ready: false, url: host })
       if (!stopped) reconnectTimer = setTimeout(connect, 3000)
     })
 
@@ -108,5 +113,5 @@ export function stop() {
   if (heartbeatTimer) { clearInterval(heartbeatTimer); heartbeatTimer = null }
   if (replyWatchTimer) { clearInterval(replyWatchTimer); replyWatchTimer = null }
   if (ws) { ws.close(); ws = null }
-  setAgentStatus({ connected: false, processing: false, url: "" })
+  setAgentStatus({ connected: false, processing: false, ready: false, url: "" })
 }

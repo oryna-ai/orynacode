@@ -325,13 +325,13 @@ export async function OrynaAuthPlugin(input: PluginInput): Promise<Hooks> {
   }
 }
 
-export async function OrynaLocalProvider(_input: PluginInput): Promise<Hooks> {
+export async function OrynaGateProvider(_input: PluginInput): Promise<Hooks> {
   return {
     provider: {
-      id: "oryna-local",
-      name: "Oryna Local",
+      id: "orynagate",
+      name: "OrynaGate",
       async models(_provider, _ctx) {
-        const url = process.env.ORYNA_LOCAL_URL
+        const url = process.env.ORYNA_GATE_URL
         if (!url) return {}
         try {
           const base = url.endsWith("/") ? url.slice(0, -1) : url

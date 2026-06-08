@@ -21,7 +21,7 @@ function readAuthUrl(): string | undefined {
     const dataDir = process.env.XDG_DATA_HOME || path.join(os.homedir(), ".local", "share")
     const authPath = path.join(dataDir, "orynacode", "auth.json")
     const auth = JSON.parse(readFileSync(authPath, "utf-8"))
-    const local = auth?.["oryna-local"]
+    const local = auth?.["orynagate"]
     if (local?.metadata?.url) return local.metadata.url
   } catch {}
   return undefined
@@ -46,7 +46,7 @@ function startReplyWatch() {
 
 export function start() {
   stopped = false
-  const url = process.env.ORYNA_LOCAL_URL || readAuthUrl()
+  const url = process.env.ORYNA_GATE_URL || readAuthUrl()
   if (!url) return
   if (connecting) return
   connecting = true

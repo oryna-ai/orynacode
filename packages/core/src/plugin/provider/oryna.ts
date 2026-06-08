@@ -5,7 +5,7 @@ import { PluginV2 } from "../../plugin"
 import { ProviderV2 } from "../../provider"
 
 const ORYNA_ID = ProviderV2.ID.make("oryna")
-const LOCAL_ID = ProviderV2.ID.make("oryna-local")
+const LOCAL_ID = ProviderV2.ID.make("orynagate")
 
 export const OrynaPlugin = PluginV2.define({
   id: PluginV2.ID.make("oryna"),
@@ -23,8 +23,8 @@ export const OrynaPlugin = PluginV2.define({
       configuredProxyUrl = entry.info.proxy?.url
     }
 
-    if (configuredProxyUrl && !process.env.ORYNA_LOCAL_URL) {
-      process.env.ORYNA_LOCAL_URL = configuredProxyUrl
+    if (configuredProxyUrl && !process.env.ORYNA_GATE_URL) {
+      process.env.ORYNA_GATE_URL = configuredProxyUrl
     }
 
     const transform = yield* catalog.transform()

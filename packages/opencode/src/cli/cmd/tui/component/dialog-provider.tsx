@@ -24,7 +24,7 @@ import os from "os"
 
 const PROVIDER_PRIORITY: Record<string, number> = {
   oryna: 0,
-  "oryna-local": 1,
+  "orynagate": 1,
 }
 
 const CUSTOM_PROVIDER_OPTION_VALUE = "__opencode_custom_provider__"
@@ -58,7 +58,7 @@ export function providerOptions(list: { id: string; name: string }[]): ProviderO
         providerID: provider.id,
         description: {
           oryna: "Cloud API — China's Best LLMs, Now Global.",
-          "oryna-local": "Deploy on your own network",
+          "orynagate": "Deploy on your own network",
         }[provider.id],
         category: "Oryna",
       })),
@@ -134,7 +134,7 @@ export function createDialogProviderOptions() {
           async onSelect() {
             if (consoleManaged) return
 
-            if (providerID === "oryna-local") {
+            if (providerID === "orynagate") {
               dialog.replace(() => <ConnectLocal onClose={() => dialog.clear()} />)
               return
             }
@@ -547,14 +547,14 @@ function ConnectLocal(props: { onClose: () => void }) {
   onCleanup(() => clearInterval(scanTimer))
 
   async function connect(url: string) {
-    process.env.ORYNA_LOCAL_URL = url
+    process.env.ORYNA_GATE_URL = url
     await sdk.client.auth.set({
-      providerID: "oryna-local",
+      providerID: "orynagate",
       auth: { type: "api", key: `sk-local-${os.userInfo().username || "user"}-${path.basename(process.cwd())}`, metadata: { url } },
     })
     await sdk.client.instance.dispose()
     await sync.bootstrap()
-    dialog.replace(() => <DialogModel providerID="oryna-local" />)
+    dialog.replace(() => <DialogModel providerID="orynagate" />)
     startAgent()
   }
 
@@ -579,7 +579,7 @@ function ConnectLocal(props: { onClose: () => void }) {
     <box paddingLeft={2} paddingRight={2} gap={1} paddingBottom={1}>
       <box flexDirection="row" justifyContent="space-between">
         <text attributes={TextAttributes.BOLD} fg={theme.text}>
-          Oryna Local
+          OrynaGate
         </text>
         <text fg={theme.textMuted} onMouseUp={props.onClose}>
           esc
@@ -591,14 +591,14 @@ function ConnectLocal(props: { onClose: () => void }) {
           <Show when={status() === "scanning"}>
             <box flexGrow={1} alignItems="center" justifyContent="center" gap={1} paddingTop={2} paddingBottom={2}>
               <Spinner color={theme.primary} />
-              <text fg={theme.textMuted}>Scanning local network for Oryna Local ({scanSeconds()}s)</text>
+              <text fg={theme.textMuted}>Scanning local network for OrynaGate ({scanSeconds()}s)</text>
               <text fg={theme.textMuted}>Checking port 9527 in nearby subnets</text>
             </box>
           </Show>
 
           <Show when={status() === "found"}>
             <box gap={1} paddingTop={2}>
-              <text fg={theme.success}>✓ Found Oryna Local</text>
+              <text fg={theme.success}>✓ Found OrynaGate</text>
               <text fg={theme.textMuted}>{proxyUrls()[0]}</text>
               <text fg={theme.textMuted}>Connecting...</text>
             </box>
@@ -607,12 +607,12 @@ function ConnectLocal(props: { onClose: () => void }) {
           <Show when={status() === "multiple"}>
             <box gap={1} paddingTop={1}>
               <box flexDirection="row" justifyContent="space-between">
-                <text fg={theme.success}>✓ Found {proxyUrls().length} Oryna Local servers</text>
+                <text fg={theme.success}>✓ Found {proxyUrls().length} OrynaGate servers</text>
                 <text fg={theme.textMuted} onMouseUp={() => setStatus("not-found")}>← Back</text>
               </box>
               <For each={proxyUrls()}>
                 {(url, index) => {
-                  const name = `Oryna Local (${new URL(url).hostname})`
+                  const name = `OrynaGate (${new URL(url).hostname})`
                   return (
                     <box flexDirection="row" gap={1}>
                       <text fg={selectedIndex() === index() ? theme.primary : theme.textMuted}>
@@ -637,8 +637,8 @@ function ConnectLocal(props: { onClose: () => void }) {
           <Show when={status() === "not-found" || status() === "validating" || status() === "invalid"}>
             <box gap={1} paddingTop={1}>
               <Show when={status() === "not-found"}>
-                <text fg={theme.warning}>No Oryna Local found on your network</text>
-                <text fg={theme.textMuted}>Oryna Local lets you run models on your own infrastructure.</text>
+                <text fg={theme.warning}>No OrynaGate found on your network</text>
+                <text fg={theme.textMuted}>OrynaGate lets you run models on your own infrastructure.</text>
               </Show>
               <Show when={status() === "validating"}>
                 <box flexDirection="row" gap={1}>
@@ -647,7 +647,7 @@ function ConnectLocal(props: { onClose: () => void }) {
                 </box>
               </Show>
               <Show when={status() === "invalid"}>
-                <text fg={theme.error}>Could not reach Oryna Local at this address</text>
+                <text fg={theme.error}>Could not reach OrynaGate at this address</text>
               </Show>
               <box gap={2} paddingTop={1}>
                 <text fg={theme.primary} onMouseUp={() => setManual(true)}>
@@ -655,7 +655,7 @@ function ConnectLocal(props: { onClose: () => void }) {
                 </text>
               </box>
               <box gap={1} paddingTop={1} flexDirection="row">
-                <text fg={theme.textMuted}>Don't have Oryna Local? Download at</text>
+                <text fg={theme.textMuted}>Don't have OrynaGate? Download at</text>
                 <text fg={theme.primary} onMouseUp={() => open("https://oryna.ai").catch(() => {})}>oryna.ai</text>
               </box>
             </box>
@@ -663,7 +663,7 @@ function ConnectLocal(props: { onClose: () => void }) {
         </>
       }>
         <box gap={1} paddingTop={1}>
-          <text fg={theme.textMuted}>Enter Oryna Local address:</text>
+          <text fg={theme.textMuted}>Enter OrynaGate address:</text>
           <textarea
             height={3}
             ref={(val: any) => {

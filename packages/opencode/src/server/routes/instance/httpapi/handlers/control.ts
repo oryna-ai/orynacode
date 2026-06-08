@@ -16,8 +16,8 @@ export const controlHandlers = HttpApiBuilder.group(RootHttpApi, "control", (han
       payload: Auth.Info
     }) {
       yield* auth.set(ctx.params.providerID, ctx.payload).pipe(Effect.orDie)
-      if (ctx.payload.type === "api" && ctx.payload.metadata?.url && String(ctx.params.providerID) === "oryna-local") {
-        process.env.ORYNA_LOCAL_URL = ctx.payload.metadata.url
+      if (ctx.payload.type === "api" && ctx.payload.metadata?.url && String(ctx.params.providerID) === "orynagate") {
+        process.env.ORYNA_GATE_URL = ctx.payload.metadata.url
       }
       return true
     })

@@ -74,17 +74,17 @@ export const providerHandlers = HttpApiBuilder.group(InstanceHttpApi, "provider"
         models: orynaRemote?.models ?? {},
       }
 
-      const localUrl = process.env.ORYNA_LOCAL_URL
-      filtered["oryna-local"] = {
-        id: "oryna-local",
-        name: "Oryna Local",
+      const localUrl = process.env.ORYNA_GATE_URL
+      filtered["orynagate"] = {
+        id: "orynagate",
+        name: "OrynaGate",
         env: [],
         api: localUrl ? `${localUrl.endsWith("/") ? localUrl.slice(0, -1) : localUrl}/v1` : "",
         models: {},
       }
 
       const connected = yield* provider.list()
-      const orynaIDs = new Set(["oryna", "oryna-local"])
+      const orynaIDs = new Set(["oryna", "orynagate"])
       const filteredConnected: Record<string, any> = {}
       for (const [id, info] of Object.entries(connected)) {
         if (orynaIDs.has(id)) filteredConnected[id] = info

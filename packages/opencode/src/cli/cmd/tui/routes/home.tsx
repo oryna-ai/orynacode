@@ -69,16 +69,16 @@ export function Home() {
   })
 
   // connect/disconnect WS based on selected model
-  let lastWasOrynaLocal = false
+  let lastWasOrynaGate = false
   createEffect(() => {
     const model = local.model.current()
-    const isOrynaLocal = model?.providerID === "oryna-local"
-    if (isOrynaLocal && !lastWasOrynaLocal) {
+    const isOrynaGate = model?.providerID === "orynagate"
+    if (isOrynaGate && !lastWasOrynaGate) {
       startAgent()
-    } else if (!isOrynaLocal && lastWasOrynaLocal) {
+    } else if (!isOrynaGate && lastWasOrynaGate) {
       stopAgent()
     }
-    lastWasOrynaLocal = isOrynaLocal
+    lastWasOrynaGate = isOrynaGate
   })
 
   const bind = (r: PromptRef | undefined) => {

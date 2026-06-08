@@ -17,14 +17,14 @@ async function tryRecoverLocalUrl(): Promise<{ url: string; key?: string } | und
   try {
     const authFile = path.join(Global.Path.data, "auth.json")
     const data = await Bun.file(authFile).json()
-    const localAuth = data?.["oryna-local"]
+    const localAuth = data?.["orynagate"]
     if (!localAuth || localAuth.type !== "api" || !localAuth.metadata?.url) return
     const url = localAuth.metadata.url
     const key = localAuth.key
     const base = url.endsWith("/") ? url.slice(0, -1) : url
     const res = await fetch(`${base}/api.json`, { signal: AbortSignal.timeout(3000) })
     if (res.ok) {
-      process.env.ORYNA_LOCAL_URL = url
+      process.env.ORYNA_GATE_URL = url
       _localAuthKey = key
       return { url, key }
     }
@@ -40,7 +40,7 @@ function mapOrynaModels(data: Record<string, any>): Record<string, any> {
     result[id] = {
       id,
       name: m.name,
-      providerID: "oryna-local",
+      providerID: "orynagate",
       family: m.family,
       api: { id, url: oryna.api ?? "", npm: oryna.npm ?? "@ai-sdk/openai-compatible" },
       capabilities: {
@@ -102,14 +102,14 @@ export const configHandlers = HttpApiBuilder.group(InstanceHttpApi, "config", (h
 
     const providers = Effect.fn("ConfigHttpApi.providers")(function* () {
       const allProviders = yield* providerSvc.list()
-      const orynaIDs = new Set(["oryna", "oryna-local"])
+      const orynaIDs = new Set(["oryna", "orynagate"])
       const filtered: Record<string, any> = {}
       for (const [id, info] of Object.entries(allProviders)) {
         if (orynaIDs.has(id)) filtered[id] = info
       }
 
-      const localUrlRecover = process.env.ORYNA_LOCAL_URL
-        ? { url: process.env.ORYNA_LOCAL_URL }
+      const localUrlRecover = process.env.ORYNA_GATE_URL
+        ? { url: process.env.ORYNA_GATE_URL }
         : (yield* Effect.tryPromise(() => tryRecoverLocalUrl()).pipe(
           Effect.catchCause(() => Effect.succeed(undefined)),
         ))
@@ -121,11 +121,11 @@ export const configHandlers = HttpApiBuilder.group(InstanceHttpApi, "config", (h
         )
         const models = (raw as any).models ?? {}
         const localApi = (raw as any).api
-        const existing = allProviders["oryna-local" as any] as Record<string, any> | undefined
+        const existing = allProviders["orynagate" as any] as Record<string, any> | undefined
         const existingKey = existing?.key || recoveredKey
         const entry = {
-          id: "oryna-local",
-          name: "Oryna Local",
+          id: "orynagate",
+          name: "OrynaGate",
           env: [],
           source: existing?.source ?? "api",
           key: existingKey,
@@ -133,8 +133,8 @@ export const configHandlers = HttpApiBuilder.group(InstanceHttpApi, "config", (h
           models,
           options: existing?.options ?? {},
         }
-        filtered["oryna-local"] = entry
-        allProviders["oryna-local" as any] = Provider.toPublicInfo(entry as any)
+        filtered["orynagate"] = entry
+        allProviders["orynagate" as any] = Provider.toPublicInfo(entry as any)
       }
 
       const withModels = Object.fromEntries(

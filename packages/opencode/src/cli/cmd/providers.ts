@@ -361,14 +361,14 @@ export const ProvidersLoginCommand = effectCmd({
     const allProviders = yield* modelsDev.get()
     const providers: Record<string, (typeof allProviders)[string]> = {}
     for (const [key, value] of Object.entries(allProviders)) {
-      if (key !== "oryna" && key !== "oryna-local") continue
+      if (key !== "oryna" && key !== "orynagate") continue
       if ((enabled ? enabled.has(key) : true) && !disabled.has(key)) providers[key] = value
     }
     const hooks = yield* pluginSvc.list()
 
     const priority: Record<string, number> = {
       oryna: 0,
-      "oryna-local": 1,
+      "orynagate": 1,
     }
     const pluginProviders = resolvePluginProviders({
       hooks,
@@ -393,7 +393,7 @@ export const ProvidersLoginCommand = effectCmd({
           }[x.id],
         })),
       ),
-      ...pluginProviders.filter((x) => x.id === "oryna" || x.id === "oryna-local").map((x) => ({
+      ...pluginProviders.filter((x) => x.id === "oryna" || x.id === "orynagate").map((x) => ({
         label: x.name,
         value: x.id,
         hint: "plugin",

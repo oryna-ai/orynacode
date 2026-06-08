@@ -1,4 +1,4 @@
-import { readFileSync } from "fs"
+import { readFileSync, writeFileSync } from "fs"
 import { setAgentStatus, agentStatus } from "./agent-signal"
 import os from "os"
 import path from "path"
@@ -54,6 +54,7 @@ function startReplyWatch() {
 }
 
 export function start() {
+  try { writeFileSync(REPLY_FILE, "") } catch {}
   stopped = false
   const url = process.env.ORYNA_GATE_URL || readAuthUrl()
   if (!url) return

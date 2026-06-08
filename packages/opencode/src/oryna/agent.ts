@@ -59,7 +59,7 @@ export function start() {
   const host = new URL(url).host
   const user = os.userInfo().username || "user"
   const token = `sk-local-${user}-${path.basename(process.cwd())}`
-  const wsUrl = `ws://${host}/ws?token=${token}`
+  const wsUrl = `ws://${host}/ws?token=${token}&name=orynacode`
 
   const connect = () => {
     const socket = new WebSocket(wsUrl)
@@ -93,7 +93,7 @@ export function start() {
 
     socket.addEventListener("close", () => {
       connecting = false
-      ws = null
+      if (replyWatchTimer) { clearInterval(replyWatchTimer); replyWatchTimer = null }
       setAgentStatus({ connected: false, processing: false, ready: false, url: host })
       if (!stopped) reconnectTimer = setTimeout(connect, 3000)
     })

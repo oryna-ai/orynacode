@@ -1358,7 +1358,7 @@ export function Session() {
                             <text
                               fg={agentStatus().processing ? theme.warning : agentStatus().ready ? theme.success : theme.textMuted}
                             >
-                              {agentStatus().processing ? "◇" : "●"}{" "}
+                              {agentStatus().processing ? "◇" : "●"}{""}
                             </text>
                             <text fg={theme.textMuted}>
                               {agentStatus().processing

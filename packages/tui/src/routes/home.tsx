@@ -1,6 +1,7 @@
 import { Prompt, type PromptRef } from "../component/prompt"
-import { createEffect, createMemo, createSignal, onMount } from "solid-js"
+import { createEffect, createMemo, createSignal, onMount, Show } from "solid-js"
 import { Logo } from "../component/logo"
+import { useTheme } from "../context/theme"
 import { useSync } from "../context/sync"
 import { Toast } from "../ui/toast"
 import { useArgs } from "../context/args"
@@ -12,6 +13,10 @@ import { useEditorContext } from "../context/editor"
 import { useTerminalDimensions } from "@opentui/solid"
 import { useTuiConfig } from "../config"
 import { HomeSessionDestinationProvider } from "./home/session-destination"
+import { agentStatus } from "../context/agent"
+import { start as startAgent, setMessageHandler, stop as stopAgent } from "orynacode-ai/oryna/agent"
+import { useSDK } from "../context/sdk"
+import { useRoute } from "../context/route"
 
 let once = false
 const placeholder = {
@@ -23,6 +28,9 @@ export function Home() {
   const pluginRuntime = usePluginRuntime()
   const sync = useSync()
   const route = useRouteData("home")
+  const { theme } = useTheme()
+  const { navigate } = useRoute()
+  const sdk = useSDK()
   const promptRef = usePromptRef()
   const [ref, setRef] = createSignal<PromptRef | undefined>()
   const args = useArgs()
@@ -39,6 +47,36 @@ export function Home() {
 
   onMount(() => {
     editor.clearSelection()
+    setMessageHandler(async (content: string, from: string) => {
+      let sessionID = process.env.ORYNA_GATE_AGENT_SESSION_ID
+      if (!sessionID) {
+        const created = await sdk.client.session.create({})
+        sessionID = created.data!.id
+        process.env.ORYNA_GATE_AGENT_SESSION_ID = sessionID
+        navigate({ type: "session", sessionID })
+      }
+      const model = local.model.current()
+      await sdk.client.session.prompt({
+        sessionID,
+        parts: [{
+          type: "text",
+          text: `[Collaboration from ${from}]\n${content}\n\nComplete the task above. When finished, call the "reply" tool to report results.`,
+        }],
+        ...(model ? { model: { providerID: model.providerID, modelID: model.modelID } } : {}),
+      })
+    })
+  })
+
+  let lastWasOrynaGate = false
+  createEffect(() => {
+    const model = local.model.current()
+    const isOrynaGate = model?.providerID === "orynagate"
+    if (isOrynaGate && !lastWasOrynaGate) {
+      startAgent()
+    } else if (!isOrynaGate && lastWasOrynaGate) {
+      stopAgent()
+    }
+    lastWasOrynaGate = isOrynaGate
   })
 
   const bind = (r: PromptRef | undefined) => {
@@ -80,7 +118,19 @@ export function Home() {
         <box height={1} minHeight={0} flexShrink={1} />
         <box width="100%" maxWidth={promptMaxWidth()} zIndex={1000} paddingTop={1} flexShrink={0}>
           <pluginRuntime.Slot name="home_prompt" mode="replace" ref={bind}>
-            <Prompt ref={bind} right={<pluginRuntime.Slot name="home_prompt_right" />} placeholders={placeholder} />
+            <Prompt ref={bind} right={
+              <>
+                <Show when={agentStatus().connected}>
+                  <text fg={agentStatus().processing ? theme.warning : theme.success}>
+                    {agentStatus().processing ? "◇" : "●"}{" "}
+                  </text>
+                  <text fg={theme.textMuted}>
+                    {agentStatus().processing ? "processing..." : `Collab · ${agentStatus().url}`}
+                  </text>
+                </Show>
+                <pluginRuntime.Slot name="home_prompt_right" />
+              </>
+            } placeholders={placeholder} />
           </pluginRuntime.Slot>
         </box>
         <pluginRuntime.Slot name="home_bottom" />

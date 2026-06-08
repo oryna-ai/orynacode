@@ -808,7 +808,6 @@
         "fuzzysort": "catalog:",
         "open": "10.1.2",
         "opentui-spinner": "catalog:",
-        "orynacode-ai": "workspace:*",
         "remeda": "catalog:",
         "solid-js": "catalog:",
         "strip-ansi": "7.1.2",

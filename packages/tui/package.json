@@ -49,7 +49,6 @@
   },
   "dependencies": {
     "@opencode-ai/core": "workspace:*",
-    "orynacode-ai": "workspace:*",
     "@opencode-ai/plugin": "workspace:*",
     "@opencode-ai/sdk": "workspace:*",
     "@opencode-ai/ui": "workspace:*",

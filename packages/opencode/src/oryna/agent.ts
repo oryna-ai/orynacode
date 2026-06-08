@@ -1,5 +1,5 @@
 import { readFileSync } from "fs"
-import { setAgentStatus } from "@opencode-ai/tui/context/agent"
+import { setAgentStatus } from "./agent-signal"
 import os from "os"
 import path from "path"
 

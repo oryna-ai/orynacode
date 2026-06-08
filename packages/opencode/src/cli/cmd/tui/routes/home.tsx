@@ -49,7 +49,7 @@ export function Home() {
   })
 
   // register message handler once
-  setMessageHandler(async (content) => {
+  setMessageHandler(async (content, from) => {
     let sessionID = process.env.ORYNA_AGENT_SESSION_ID
     if (!sessionID) {
       const created = await sdk.client.session.create({})
@@ -60,19 +60,25 @@ export function Home() {
     const model = local.model.current()
     await sdk.client.session.prompt({
       sessionID,
-      parts: [{ type: "text", text: content }],
+      parts: [{
+        type: "text",
+        text: `[Collaboration from ${from}]\n${content}\n\nComplete the task above. When finished, call the "reply" tool to report results.`,
+      }],
       ...(model ? { model: { providerID: model.providerID, modelID: model.modelID } } : {}),
     })
   })
 
   // connect/disconnect WS based on selected model
+  let lastWasOrynaLocal = false
   createEffect(() => {
     const model = local.model.current()
-    if (model?.providerID === "oryna-local") {
+    const isOrynaLocal = model?.providerID === "oryna-local"
+    if (isOrynaLocal && !lastWasOrynaLocal) {
       startAgent()
-    } else {
+    } else if (!isOrynaLocal && lastWasOrynaLocal) {
       stopAgent()
     }
+    lastWasOrynaLocal = isOrynaLocal
   })
 
   const bind = (r: PromptRef | undefined) => {

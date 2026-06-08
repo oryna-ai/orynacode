@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync } from "fs"
+import { readFileSync } from "fs"
 import { setAgentStatus, agentStatus } from "./agent-signal"
 import os from "os"
 import path from "path"
@@ -8,7 +8,7 @@ export function setReady(ready: boolean) {
   setAgentStatus({ ...s, ready })
 }
 
-const REPLY_FILE = "/tmp/oryna-reply"
+const REPLY_FILE = `/tmp/oryna-reply-${process.pid}`
 let ws: WebSocket | null = null
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null
 let heartbeatTimer: ReturnType<typeof setInterval> | null = null
@@ -54,7 +54,6 @@ function startReplyWatch() {
 }
 
 export function start() {
-  try { writeFileSync(REPLY_FILE, "") } catch {}
   stopped = false
   const url = process.env.ORYNA_GATE_URL || readAuthUrl()
   if (!url) return

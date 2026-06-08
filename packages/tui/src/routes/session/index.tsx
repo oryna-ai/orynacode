@@ -1151,13 +1151,8 @@ export function Session() {
 
   // register message handler once
   setMessageHandler(async (content: string, from: string) => {
-    let sessionID = process.env.ORYNA_GATE_AGENT_SESSION_ID
-    if (!sessionID) {
-      const created = await sdk.client.session.create({})
-      sessionID = created.data!.id
-      process.env.ORYNA_GATE_AGENT_SESSION_ID = sessionID
-      navigate({ type: "session", sessionID })
-    }
+    const sessionID = route.sessionID
+    if (!sessionID) return
     const model = local.model.current()
     await sdk.client.session.prompt({
       sessionID,

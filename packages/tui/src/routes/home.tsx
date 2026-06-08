@@ -14,9 +14,7 @@ import { useTerminalDimensions } from "@opentui/solid"
 import { useTuiConfig } from "../config"
 import { HomeSessionDestinationProvider } from "./home/session-destination"
 import { agentStatus } from "../context/agent"
-import { start as startAgent, setMessageHandler, stop as stopAgent } from "orynacode-ai/oryna/agent"
-import { useSDK } from "../context/sdk"
-import { useRoute } from "../context/route"
+import { start as startAgent, stop as stopAgent } from "orynacode-ai/oryna/agent"
 
 let once = false
 const placeholder = {
@@ -29,8 +27,6 @@ export function Home() {
   const sync = useSync()
   const route = useRouteData("home")
   const { theme } = useTheme()
-  const { navigate } = useRoute()
-  const sdk = useSDK()
   const promptRef = usePromptRef()
   const [ref, setRef] = createSignal<PromptRef | undefined>()
   const args = useArgs()
@@ -47,25 +43,6 @@ export function Home() {
 
   onMount(() => {
     editor.clearSelection()
-    setMessageHandler(async (content: string, from: string) => {
-      let sessionID = process.env.ORYNA_GATE_AGENT_SESSION_ID
-      if (!sessionID) {
-        const created = await sdk.client.session.create({})
-        sessionID = created.data!.id
-        process.env.ORYNA_GATE_AGENT_SESSION_ID = sessionID
-        navigate({ type: "session", sessionID })
-      }
-      const model = local.model.current()
-      await sdk.client.session.prompt({
-        sessionID,
-        system: "*** You are responding to a collaboration message. After completing the task, you MUST use the 'reply' tool to send results back. Never output a plain text response to a collaboration message. ***",
-        parts: [{
-          type: "text",
-          text: `[Collaboration from ${from}]\n${content}`,
-        }],
-        ...(model ? { model: { providerID: model.providerID, modelID: model.modelID } } : {}),
-      })
-    })
   })
 
   let lastWasOrynaGate = false

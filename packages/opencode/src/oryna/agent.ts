@@ -39,12 +39,16 @@ function startReplyWatch() {
     try {
       const raw = readFileSync(REPLY_FILE, "utf-8")
       const lines = raw.split("\n")
+      let sent = 0
       for (let i = offset; i < lines.length; i++) {
         const line = lines[i].trim()
         if (!line) continue
-        if (ws?.readyState === WebSocket.OPEN) ws.send(line)
+        if (ws?.readyState === WebSocket.OPEN) {
+          ws.send(line)
+          sent++
+        }
       }
-      offset = lines.length
+      offset += sent
     } catch {}
   }, 300)
 }
@@ -93,7 +97,6 @@ export function start() {
 
     socket.addEventListener("close", () => {
       connecting = false
-      if (replyWatchTimer) { clearInterval(replyWatchTimer); replyWatchTimer = null }
       setAgentStatus({ connected: false, processing: false, ready: false, url: host })
       if (!stopped) reconnectTimer = setTimeout(connect, 3000)
     })

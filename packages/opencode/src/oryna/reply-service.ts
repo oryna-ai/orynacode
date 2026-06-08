@@ -1,8 +1,11 @@
-import { appendFileSync } from "fs"
+let pending: string[] = []
 
 export function sendReply(content: string) {
-  appendFileSync(
-    "/tmp/oryna-reply",
-    JSON.stringify({ cmd: "reply", args: JSON.stringify({ content }) }) + "\n",
-  )
+  pending.push(JSON.stringify({ cmd: "reply", args: JSON.stringify({ content }) }))
+}
+
+export function drainReplies(): string[] {
+  const batch = pending
+  pending = []
+  return batch
 }

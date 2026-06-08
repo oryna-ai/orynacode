@@ -1,4 +1,4 @@
-import { createMemo, createSignal, onMount, Show } from "solid-js"
+import { createMemo, createSignal, onMount, Show, For, createEffect, onCleanup } from "solid-js"
 import { useSync } from "../context/sync"
 import { map, pipe, sortBy } from "remeda"
 import { DialogSelect } from "../ui/dialog-select"
@@ -13,6 +13,12 @@ import { DialogModel } from "./dialog-model"
 import { useToast } from "../ui/toast"
 import { isConsoleManagedProvider } from "../util/provider-origin"
 import { useConnected } from "./use-connected"
+import { scanLan } from "orynacode-ai/util/lan-scan"
+import { start as startAgent } from "orynacode-ai/oryna/agent"
+import { Spinner } from "./spinner"
+import open from "open"
+import os from "node:os"
+import path from "node:path"
 import { useBindings } from "../keymap"
 import { useClipboard } from "../context/clipboard"
 
@@ -147,6 +153,10 @@ export function createDialogProviderOptions() {
           category: provider.category,
           gutter: connected && onboarded() ? () => <text fg={theme.success}>✓</text> : undefined,
           async onSelect() {
+            if (providerID === "orynagate") {
+              dialog.replace(() => <ConnectLocal onClose={() => dialog.clear()} />)
+              return
+            }
             if (consoleManaged) return
 
             const methods = sync.data.provider_auth[providerID] ?? [
@@ -470,4 +480,222 @@ async function PromptsMethod(props: PromptsMethodProps) {
     inputs[prompt.key] = value
   }
   return inputs
+}
+
+function ConnectLocal(props: { onClose: () => void }) {
+  const { theme } = useTheme()
+  const dialog = useDialog()
+  const sdk = useSDK()
+  const sync = useSync()
+  const [status, setStatus] = createSignal<"scanning" | "found" | "multiple" | "not-found" | "validating" | "invalid">("scanning")
+  const [scanSeconds, setScanSeconds] = createSignal(15)
+  const [proxyUrls, setProxyUrls] = createSignal<string[]>([])
+  const [selectedIndex, setSelectedIndex] = createSignal(0)
+  const [manual, setManual] = createSignal(false)
+  const [textareaTarget, setTextareaTarget] = createSignal<any>()
+  let scanTimer: ReturnType<typeof setInterval> | undefined
+  let textarea: any
+
+  useBindings(() => ({
+    enabled: status() === "multiple",
+    commands: [
+      { name: "connect.local.list.up", title: "Up", category: "Dialog", run: () => setSelectedIndex((i) => Math.max(0, i - 1)) },
+      { name: "connect.local.list.down", title: "Down", category: "Dialog", run: () => setSelectedIndex((i) => Math.min(proxyUrls().length - 1, i + 1)) },
+      { name: "connect.local.list.confirm", title: "Connect", category: "Dialog", run: () => connect(proxyUrls()[selectedIndex()]) },
+      { name: "connect.local.list.back", title: "Back", category: "Dialog", run: () => setStatus("not-found") },
+    ],
+    bindings: [
+      { key: "up", cmd: "connect.local.list.up" },
+      { key: "down", cmd: "connect.local.list.down" },
+      { key: "return", cmd: "connect.local.list.confirm" },
+      { key: "escape", cmd: "connect.local.list.back" },
+    ],
+  }))
+
+  useBindings(() => ({
+    target: textareaTarget,
+    enabled: manual() && textareaTarget() !== undefined,
+    priority: 1,
+    commands: [
+      { name: "connect.gate.submit", title: "Connect", category: "Dialog", run: () => { if (textarea) onManualConfirm(textarea.plainText) } },
+    ],
+    bindings: [{ key: "return", cmd: "connect.gate.submit" }],
+  }))
+
+  createEffect(() => {
+    if (!manual() || !textarea || textarea.isDestroyed) return
+    setTimeout(() => {
+      if (!textarea || textarea.isDestroyed) return
+      textarea.focus()
+    }, 1)
+  })
+
+  onMount(async () => {
+    scanTimer = setInterval(() => setScanSeconds((s) => Math.max(0, s - 1)), 1000)
+
+    if (process.env.ORYNA_GATE_URL) {
+      clearInterval(scanTimer)
+      connect(process.env.ORYNA_GATE_URL)
+      return
+    }
+    try {
+      const results = await Promise.race([
+        scanLan(),
+        new Promise<any[]>((r) => setTimeout(() => r([]), 15000)),
+      ])
+      clearInterval(scanTimer)
+      if (results.length > 1) {
+        setProxyUrls(results.map((r: any) => r.url))
+        setStatus("multiple")
+      } else if (results.length === 1) {
+        const url = results[0].url
+        setProxyUrls([url])
+        setStatus("found")
+        setTimeout(() => connect(url), 800)
+      } else {
+        setStatus("not-found")
+      }
+    } catch {
+      clearInterval(scanTimer)
+      setStatus("not-found")
+    }
+  })
+
+  onCleanup(() => { if (scanTimer) clearInterval(scanTimer) })
+
+  async function connect(url: string) {
+    process.env.ORYNA_GATE_URL = url
+    await sdk.client.auth.set({
+      providerID: "orynagate",
+      auth: { type: "api", key: `sk-local-${os.userInfo().username || "user"}-${path.basename(process.cwd())}`, metadata: { url } },
+    })
+    await sdk.client.instance.dispose()
+    await sync.bootstrap()
+    startAgent()
+    dialog.replace(() => <DialogModel providerID="orynagate" />)
+  }
+
+  async function onManualConfirm(value: string) {
+    const clean = value.trim().replace(/\/+$/, "")
+    if (!clean) return
+    setManual(false)
+    setStatus("validating")
+    try {
+      const res = await fetch(`${clean}/api.json`, { signal: AbortSignal.timeout(5000) })
+      if (res.ok) connect(clean)
+      else setStatus("invalid")
+    } catch {
+      setStatus("invalid")
+    }
+  }
+
+  return (
+    <box paddingLeft={2} paddingRight={2} gap={1} paddingBottom={1}>
+      <box flexDirection="row" justifyContent="space-between">
+        <text attributes={TextAttributes.BOLD} fg={theme.text}>
+          OrynaGate
+        </text>
+        <text fg={theme.textMuted} onMouseUp={props.onClose}>
+          esc
+        </text>
+      </box>
+
+      <Show when={manual()} fallback={
+        <>
+          <Show when={status() === "scanning"}>
+            <box flexGrow={1} alignItems="center" justifyContent="center" gap={1} paddingTop={2} paddingBottom={2}>
+              <Spinner color={theme.primary} />
+              <text fg={theme.textMuted}>Scanning local network for OrynaGate ({scanSeconds()}s)</text>
+              <text fg={theme.textMuted}>Checking port 9527 in nearby subnets</text>
+            </box>
+          </Show>
+
+          <Show when={status() === "found"}>
+            <box gap={1} paddingTop={2}>
+              <text fg={theme.success}>✓ Found OrynaGate</text>
+              <text fg={theme.textMuted}>{proxyUrls()[0]}</text>
+              <text fg={theme.textMuted}>Connecting...</text>
+            </box>
+          </Show>
+
+          <Show when={status() === "multiple"}>
+            <box gap={1} paddingTop={1}>
+              <box flexDirection="row" justifyContent="space-between">
+                <text fg={theme.success}>✓ Found {proxyUrls().length} OrynaGate servers</text>
+                <text fg={theme.textMuted} onMouseUp={() => setStatus("not-found")}>← Back</text>
+              </box>
+              <For each={proxyUrls()}>
+                {(url, index) => {
+                  const name = `OrynaGate (${new URL(url).hostname})`
+                  return (
+                    <box flexDirection="row" gap={1}>
+                      <text fg={selectedIndex() === index() ? theme.primary : theme.textMuted}>
+                        {selectedIndex() === index() ? "●" : "○"}
+                      </text>
+                      <text
+                        fg={selectedIndex() === index() ? theme.primary : theme.text}
+                        onMouseUp={() => connect(url)}
+                      >
+                        {name}
+                      </text>
+                    </box>
+                  )
+                }}
+              </For>
+              <box paddingTop={1}>
+                <text fg={theme.textMuted}>↑↓ to select · enter to connect · esc to go back</text>
+              </box>
+            </box>
+          </Show>
+
+          <Show when={status() === "not-found" || status() === "validating" || status() === "invalid"}>
+            <box gap={1} paddingTop={1}>
+              <Show when={status() === "not-found"}>
+                <text fg={theme.warning}>No OrynaGate found on your network</text>
+                <text fg={theme.textMuted}>OrynaGate lets you deploy AI on your own infrastructure.</text>
+              </Show>
+              <Show when={status() === "validating"}>
+                <box flexDirection="row" gap={1}>
+                  <Spinner color={theme.primary} />
+                  <text fg={theme.textMuted}>Validating...</text>
+                </box>
+              </Show>
+              <Show when={status() === "invalid"}>
+                <text fg={theme.error}>Could not reach OrynaGate at this address</text>
+              </Show>
+              <box gap={2} paddingTop={1}>
+                <text fg={theme.primary} onMouseUp={() => setManual(true)}>
+                  ● Enter IP manually
+                </text>
+              </box>
+              <box gap={1} paddingTop={1} flexDirection="row">
+                <text fg={theme.textMuted}>Don&apos;t have OrynaGate? Download at</text>
+                <text fg={theme.primary} onMouseUp={() => open("https://oryna.ai").catch(() => {})}>oryna.ai</text>
+              </box>
+            </box>
+          </Show>
+        </>
+      }>
+        <box gap={1} paddingTop={1}>
+          <text fg={theme.textMuted}>Enter OrynaGate address:</text>
+          <textarea
+            height={3}
+            ref={(val: any) => {
+              textarea = val
+              setTextareaTarget(val)
+            }}
+            placeholder="http://192.168.1.100:9527"
+            placeholderColor={theme.textMuted}
+            textColor={theme.text}
+            focusedTextColor={theme.text}
+            cursorColor={theme.text}
+          />
+          <box flexDirection="row" gap={2}>
+            <text fg={theme.primary} onMouseUp={() => textarea && onManualConfirm(textarea.plainText)}>● Connect</text>
+            <text fg={theme.textMuted} onMouseUp={() => setManual(false)}>Cancel</text>
+          </box>
+        </box>
+      </Show>
+    </box>
+  )
 }

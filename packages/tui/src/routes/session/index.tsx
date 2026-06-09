@@ -2675,6 +2675,7 @@ const toolDisplays = new Set([
   "todowrite",
   "question",
   "skill",
+  "reply",
 ])
 
 export function toolDisplay(tool: string) {

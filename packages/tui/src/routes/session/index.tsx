@@ -1842,6 +1842,9 @@ function ToolPart(props: { last: boolean; part: ToolPart; message: AssistantMess
         <Match when={display() === "skill"}>
           <Skill {...toolprops} />
         </Match>
+        <Match when={display() === "reply"}>
+          <ReplyDisplay {...toolprops} />
+        </Match>
         <Match when={true}>
           <GenericTool {...toolprops} />
         </Match>
@@ -1857,6 +1860,45 @@ type ToolProps = {
   output?: string
   part: ToolPart
 }
+function ReplyDisplay(props: ToolProps) {
+  const { theme } = useTheme()
+  const content = String(props.input?.content ?? "")
+  const to = String(props.input?.to ?? "")
+  const ctx = use()
+  const maxLines = 3
+  const maxChars = createMemo(() => maxLines * Math.max(20, ctx.width - 6))
+  const collapsed = createMemo(() => collapseToolOutput(content, maxLines, maxChars()))
+  const [expanded, setExpanded] = createSignal(false)
+  const limited = createMemo(() => {
+    if (expanded() || !collapsed().overflow) return content
+    return collapsed().output
+  })
+
+  return (
+    <Show
+      when={content}
+      fallback={
+        <InlineTool icon="↩" iconColor={theme.success} complete={false} pending="Replying..." part={props.part}>
+          <text fg={theme.textMuted}>Sending reply</text>
+        </InlineTool>
+      }
+    >
+      <BlockTool
+        title={`↩ Replied${to ? ` → ${to}` : ""}`}
+        part={props.part}
+        onClick={collapsed().overflow ? () => setExpanded((prev) => !prev) : undefined}
+      >
+        <box gap={1}>
+          <text fg={theme.text}>{limited()}</text>
+          <Show when={collapsed().overflow}>
+            <text fg={theme.textMuted}>{expanded() ? "Click to collapse" : "Click to expand"}</text>
+          </Show>
+        </box>
+      </BlockTool>
+    </Show>
+  )
+}
+
 function GenericTool(props: ToolProps) {
   const { theme } = useTheme()
   const ctx = use()
@@ -2644,6 +2686,7 @@ const toolDisplays = new Set([
   "todowrite",
   "question",
   "skill",
+  "reply",
 ])
 
 export function toolDisplay(tool: string) {

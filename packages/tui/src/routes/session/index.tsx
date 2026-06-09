@@ -1172,7 +1172,7 @@ export function Session() {
       system: "*** You are responding to a collaboration message. After completing the task, you MUST use the 'reply' tool to send results back. Never output a plain text response to a collaboration message. ***",
       parts: [{
         type: "text",
-        text: `[Collaboration from ${from}, mode: ${agentName}]\n${content}`,
+        text: `[Collaboration from ${from}, mode: ${agentName}]\n${content}\n\nUse the "reply" tool to respond.`,
       }],
       ...(model ? { model: { providerID: model.providerID, modelID: model.modelID } } : {}),
     })

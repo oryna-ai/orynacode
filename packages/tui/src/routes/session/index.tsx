@@ -1863,8 +1863,9 @@ type ToolProps = {
 }
 function ReplyDisplay(props: ToolProps) {
   const { theme } = useTheme()
-  const content = String(props.input?.content ?? "")
-  const to = String(props.input?.to ?? "")
+  const input = (props.part.state as any).input ?? {}
+  const content = String(input.content ?? "")
+  const to = String(input.to ?? "")
   const ctx = use()
   const maxLines = 3
   const maxChars = createMemo(() => maxLines * Math.max(20, ctx.width - 6))

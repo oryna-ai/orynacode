@@ -1169,10 +1169,10 @@ export function Session() {
     const agentName = agent?.name ?? "build"
     await sdk.client.session.prompt({
       sessionID,
-      system: "*** You are responding to a collaboration message. After completing the task, you MUST use the 'reply' tool to send results back. Never output a plain text response to a collaboration message. ***",
+      system: `*** You are responding to a collaboration message. After completing the task, you MUST use the 'reply' tool to send results back with to="${from}". Never output a plain text response. ***`,
       parts: [{
         type: "text",
-        text: `[Collaboration from ${from}, mode: ${agentName}]\n${content}\n\nReply using: reply content="your summary" to="${from}"`,
+        text: `[Collaboration from ${from}, mode: ${agentName}]\n${content}`,
       }],
       ...(model ? { model: { providerID: model.providerID, modelID: model.modelID } } : {}),
     })
@@ -1900,29 +1900,18 @@ function GenericTool(props: ToolProps) {
 
 function ReplyDisplay(props: { input: Record<string, unknown> }) {
   const { theme } = useTheme()
-  const output = String(props.input?.content ?? "")
-  const ctx = use()
-  const maxLines = 3
-  const maxChars = createMemo(() => maxLines * Math.max(20, ctx.width - 6))
-  const collapsed = createMemo(() => collapseToolOutput(output, maxLines, maxChars()))
-  const [expanded, setExpanded] = createSignal(false)
-  const limited = createMemo(() => {
-    if (expanded() || !collapsed().overflow) return output
-    return collapsed().output
-  })
+  const content = String(props.input?.content ?? "")
+  const to = String(props.input?.to ?? "")
 
   return (
-    <BlockTool
-      title="↩ Replied"
-      onClick={collapsed().overflow ? () => setExpanded((prev) => !prev) : undefined}
-    >
-      <box gap={1}>
-        <text fg={theme.text}>{limited()}</text>
-        <Show when={collapsed().overflow}>
-          <text fg={theme.textMuted}>{expanded() ? "Click to collapse" : "Click to expand"}</text>
-        </Show>
-      </box>
-    </BlockTool>
+    <box flexDirection="row" gap={1}>
+      <text fg={theme.success}>↩</text>
+      <text fg={theme.textMuted}>Replied:</text>
+      <text fg={theme.text}>{content.slice(0, 100)}{content.length > 100 ? "..." : ""}</text>
+      <Show when={to}>
+        <text fg={theme.textMuted}>→ {to}</text>
+      </Show>
+    </box>
   )
 }
 

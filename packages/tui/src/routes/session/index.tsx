@@ -1165,9 +1165,15 @@ export function Session() {
     }
 
     const model = local.model.current()
+    const agent = local.agent.current()
+    const agentName = agent?.name ?? "build"
+    const modeHint = agentName === "plan"
+      ? "*** You are in Plan (read-only) mode. Analyze and suggest, but do NOT make any file changes. After finishing, you MUST use the 'reply' tool to report your findings. ***"
+      : "*** You are in Build mode. You may modify files and run commands. After completing the task, you MUST use the 'reply' tool to send results back. ***"
+
     await sdk.client.session.prompt({
       sessionID,
-      system: "*** You are responding to a collaboration message. After completing the task, you MUST use the 'reply' tool to send results back. Never output a plain text response to a collaboration message. ***",
+      system: modeHint,
       parts: [{
         type: "text",
         text: `[Collaboration from ${from}]\n${content}`,

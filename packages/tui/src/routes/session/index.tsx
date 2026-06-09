@@ -1875,27 +1875,23 @@ function ReplyDisplay(props: ToolProps) {
   })
 
   return (
-    <Show
-      when={content}
-      fallback={
-        <InlineTool icon="↩" iconColor={theme.success} complete={false} pending="Replying..." part={props.part}>
-          <text fg={theme.textMuted}>Sending reply</text>
-        </InlineTool>
-      }
+    <BlockTool
+      title={`↩ Replied${to ? ` → ${to}` : ""}`}
+      part={props.part}
+      onClick={collapsed().overflow ? () => setExpanded((prev) => !prev) : undefined}
     >
-      <BlockTool
-        title={`↩ Replied${to ? ` → ${to}` : ""}`}
-        part={props.part}
-        onClick={collapsed().overflow ? () => setExpanded((prev) => !prev) : undefined}
-      >
-        <box gap={1}>
+      <box gap={1}>
+        <Show
+          when={content}
+          fallback={<text fg={theme.textMuted}>Replying...</text>}
+        >
           <text fg={theme.text}>{limited()}</text>
-          <Show when={collapsed().overflow}>
-            <text fg={theme.textMuted}>{expanded() ? "Click to collapse" : "Click to expand"}</text>
-          </Show>
-        </box>
-      </BlockTool>
-    </Show>
+        </Show>
+        <Show when={collapsed().overflow}>
+          <text fg={theme.textMuted}>{expanded() ? "Click to collapse" : "Click to expand"}</text>
+        </Show>
+      </box>
+    </BlockTool>
   )
 }
 

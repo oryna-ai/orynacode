@@ -89,9 +89,15 @@ export function start() {
         const from = msg.data?.from || "unknown"
         if (!content) return
 
-        setTimeout(() => setAgentStatus({ connected: true, processing: true, ready: false, url: host }), 0)
+        setTimeout(() => {
+          const s = agentStatus()
+          setAgentStatus({ connected: true, processing: true, ready: s.ready, url: host })
+        }, 0)
         if (onMessage) await onMessage(content, from)
-        setTimeout(() => setAgentStatus({ connected: true, processing: false, ready: false, url: host }), 0)
+        setTimeout(() => {
+          const s = agentStatus()
+          setAgentStatus({ connected: true, processing: false, ready: s.ready, url: host })
+        }, 0)
       } catch {}
     })
 

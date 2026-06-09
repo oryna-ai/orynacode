@@ -1877,7 +1877,7 @@ function ReplyDisplay(props: ToolProps) {
 
   return (
     <BlockTool
-      title={`↩ Replied${to ? ` → ${to}` : ""}`}
+      title={`↩ Replied${to ? " → " + to : ""}`}
       part={props.part}
       onClick={collapsed().overflow ? () => setExpanded((prev) => !prev) : undefined}
     >

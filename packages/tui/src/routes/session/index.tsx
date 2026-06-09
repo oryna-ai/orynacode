@@ -1155,6 +1155,15 @@ export function Session() {
   setMessageHandler(async (content: string, from: string) => {
     const sessionID = route.sessionID
     if (!sessionID) return
+
+    if (content.startsWith("/build ")) {
+      local.agent.set("build")
+      content = content.slice(7)
+    } else if (content.startsWith("/plan ")) {
+      local.agent.set("plan")
+      content = content.slice(6)
+    }
+
     const model = local.model.current()
     await sdk.client.session.prompt({
       sessionID,
@@ -1831,6 +1840,9 @@ function ToolPart(props: { last: boolean; part: ToolPart; message: AssistantMess
         <Match when={display() === "skill"}>
           <Skill {...toolprops} />
         </Match>
+        <Match when={display() === "reply"}>
+          <ReplyDisplay input={toolprops.input} />
+        </Match>
         <Match when={true}>
           <GenericTool {...toolprops} />
         </Match>
@@ -1881,6 +1893,34 @@ function GenericTool(props: ToolProps) {
         </box>
       </BlockTool>
     </Show>
+  )
+}
+
+function ReplyDisplay(props: { input: Record<string, unknown> }) {
+  const { theme } = useTheme()
+  const output = String(props.input?.content ?? "")
+  const ctx = use()
+  const maxLines = 3
+  const maxChars = createMemo(() => maxLines * Math.max(20, ctx.width - 6))
+  const collapsed = createMemo(() => collapseToolOutput(output, maxLines, maxChars()))
+  const [expanded, setExpanded] = createSignal(false)
+  const limited = createMemo(() => {
+    if (expanded() || !collapsed().overflow) return output
+    return collapsed().output
+  })
+
+  return (
+    <BlockTool
+      title="↩ Replied"
+      onClick={collapsed().overflow ? () => setExpanded((prev) => !prev) : undefined}
+    >
+      <box gap={1}>
+        <text fg={theme.text}>{limited()}</text>
+        <Show when={collapsed().overflow}>
+          <text fg={theme.textMuted}>{expanded() ? "Click to collapse" : "Click to expand"}</text>
+        </Show>
+      </box>
+    </BlockTool>
   )
 }
 

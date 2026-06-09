@@ -57,8 +57,6 @@ export function start() {
   stopped = false
   const url = process.env.ORYNA_GATE_URL || readAuthUrl()
   if (!url) return
-  if (connecting) return
-  connecting = true
 
   const host = new URL(url).host
   const user = os.userInfo().username || "user"
@@ -66,6 +64,8 @@ export function start() {
   const wsUrl = `ws://${host}/ws?token=${token}&name=orynacode`
 
   const connect = () => {
+    if (connecting) return
+    connecting = true
     const socket = new WebSocket(wsUrl)
     ws = socket
 

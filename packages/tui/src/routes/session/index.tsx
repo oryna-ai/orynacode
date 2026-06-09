@@ -1842,9 +1842,6 @@ function ToolPart(props: { last: boolean; part: ToolPart; message: AssistantMess
         <Match when={display() === "skill"}>
           <Skill {...toolprops} />
         </Match>
-        <Match when={display() === "reply"}>
-          <ReplyDisplay input={toolprops.input} />
-        </Match>
         <Match when={true}>
           <GenericTool {...toolprops} />
         </Match>
@@ -1895,23 +1892,6 @@ function GenericTool(props: ToolProps) {
         </box>
       </BlockTool>
     </Show>
-  )
-}
-
-function ReplyDisplay(props: { input: Record<string, unknown> }) {
-  const { theme } = useTheme()
-  const content = String(props.input?.content ?? "")
-  const to = String(props.input?.to ?? "")
-
-  return (
-    <box flexDirection="row" gap={1}>
-      <text fg={theme.success}>↩</text>
-      <text fg={theme.textMuted}>Replied:</text>
-      <text fg={theme.text}>{content.slice(0, 100)}{content.length > 100 ? "..." : ""}</text>
-      <Show when={to}>
-        <text fg={theme.textMuted}>→ {to}</text>
-      </Show>
-    </box>
   )
 }
 
@@ -2664,7 +2644,6 @@ const toolDisplays = new Set([
   "todowrite",
   "question",
   "skill",
-  "reply",
 ])
 
 export function toolDisplay(tool: string) {

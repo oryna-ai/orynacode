@@ -1844,7 +1844,7 @@ function ToolPart(props: { last: boolean; part: ToolPart; message: AssistantMess
           <Skill {...toolprops} />
         </Match>
         <Match when={display() === "reply"}>
-          <ReplyDisplay {...toolprops} />
+          <ReplyDisplay part={props.part} />
         </Match>
         <Match when={true}>
           <GenericTool {...toolprops} />
@@ -1861,30 +1861,29 @@ type ToolProps = {
   output?: string
   part: ToolPart
 }
-function ReplyDisplay(props: ToolProps) {
+function ReplyDisplay(props: { part: ToolPart }) {
   const { theme } = useTheme()
-  const input = (props.part.state as any).input ?? {}
-  const content = String(input.content ?? "")
-  const to = String(input.to ?? "")
+  const content = createMemo(() => String(props.part.state.input?.content ?? ""))
+  const to = createMemo(() => String(props.part.state.input?.to ?? ""))
   const ctx = use()
   const maxLines = 3
   const maxChars = createMemo(() => maxLines * Math.max(20, ctx.width - 6))
-  const collapsed = createMemo(() => collapseToolOutput(content, maxLines, maxChars()))
+  const collapsed = createMemo(() => collapseToolOutput(content(), maxLines, maxChars()))
   const [expanded, setExpanded] = createSignal(false)
   const limited = createMemo(() => {
-    if (expanded() || !collapsed().overflow) return content
+    if (expanded() || !collapsed().overflow) return content()
     return collapsed().output
   })
 
   return (
     <BlockTool
-      title={`↩ Replied${to ? " → " + to : ""}`}
+      title={`↩ Replied${to() ? " → " + to() : ""}`}
       part={props.part}
       onClick={collapsed().overflow ? () => setExpanded((prev) => !prev) : undefined}
     >
       <box gap={1}>
         <Show
-          when={content}
+          when={content()}
           fallback={<text fg={theme.textMuted}>Replying...</text>}
         >
           <text fg={theme.text}>{limited()}</text>

@@ -6,6 +6,9 @@ export const Parameters = Schema.Struct({
   content: Schema.String.annotate({
     description: "The reply content to send back. Keep it concise.",
   }),
+  to: Schema.optional(Schema.String).annotate({
+    description: "The recipient to reply to. Must match the 'from' value in the collaboration message.",
+  }),
 })
 
 export const ReplyTool = Tool.define(
@@ -17,7 +20,7 @@ export const ReplyTool = Tool.define(
       parameters: Parameters,
       execute: (params: Schema.Schema.Type<typeof Parameters>, _ctx: Tool.Context) =>
         Effect.gen(function* () {
-          sendReply(params.content)
+          sendReply(params.content, params.to)
           return {
             title: "Replied to collaboration message",
             output: "Reply sent successfully.",

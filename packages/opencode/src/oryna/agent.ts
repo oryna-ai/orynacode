@@ -16,7 +16,6 @@ let replyWatchTimer: ReturnType<typeof setInterval> | null = null
 let stopped = false
 let connecting = false
 let onMessage: ((content: string, from: string) => Promise<void>) | null = null
-let lastFrom = ""
 
 export function setMessageHandler(fn: (content: string, from: string) => Promise<void>) {
   onMessage = fn
@@ -42,19 +41,8 @@ function startReplyWatch() {
       const lines = raw.split("\n")
       let sent = 0
       for (let i = offset; i < lines.length; i++) {
-        let line = lines[i].trim()
+        const line = lines[i].trim()
         if (!line) continue
-        if (lastFrom) {
-          try {
-            const msg = JSON.parse(line)
-            if (msg.cmd === "reply") {
-              const args = JSON.parse(msg.args)
-              args.to = lastFrom
-              msg.args = JSON.stringify(args)
-              line = JSON.stringify(msg)
-            }
-          } catch {}
-        }
         if (ws?.readyState === WebSocket.OPEN) {
           ws.send(line)
           sent++
@@ -99,7 +87,6 @@ export function start() {
 
         const content = msg.data?.content
         const from = msg.data?.from || "unknown"
-        lastFrom = from
         if (!content) return
 
         setTimeout(() => setAgentStatus({ connected: true, processing: true, ready: false, url: host }), 0)

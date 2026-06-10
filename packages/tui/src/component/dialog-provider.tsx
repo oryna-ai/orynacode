@@ -557,14 +557,9 @@ function ConnectLocal(props: { onClose: () => void }) {
         new Promise<any[]>((r) => setTimeout(() => r([]), 15000)),
       ])
       clearInterval(scanTimer)
-      if (results.length > 1) {
+      if (results.length >= 1) {
         setProxyUrls(results.map((r: any) => r.url))
         setStatus("multiple")
-      } else if (results.length === 1) {
-        const url = results[0].url
-        setProxyUrls([url])
-        setStatus("found")
-        setTimeout(() => connect(url), 800)
       } else {
         setStatus("not-found")
       }

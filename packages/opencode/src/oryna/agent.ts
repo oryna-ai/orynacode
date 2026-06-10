@@ -71,7 +71,8 @@ export function start() {
 
     socket.addEventListener("open", () => {
       startReplyWatch()
-      setAgentStatus({ connected: true, processing: false, ready: false, url: host })
+      const s = agentStatus()
+      setAgentStatus({ connected: true, processing: false, ready: s.ready, url: host })
       heartbeatTimer = setInterval(() => {
         if (socket.readyState === WebSocket.OPEN) socket.send("__PING__")
       }, 30000)
@@ -103,7 +104,8 @@ export function start() {
 
     socket.addEventListener("close", () => {
       connecting = false
-      setAgentStatus({ connected: false, processing: false, ready: false, url: host })
+      const s = agentStatus()
+      setAgentStatus({ connected: false, processing: false, ready: s.ready, url: host })
       if (!stopped) reconnectTimer = setTimeout(connect, 3000)
     })
 

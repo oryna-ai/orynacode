@@ -1169,6 +1169,7 @@ export function Session() {
     const agentName = agent?.name ?? "build"
     await sdk.client.session.prompt({
       sessionID,
+      agent: agent?.name,
       system: `*** You are responding to a collaboration message. After completing the task, you MUST use the 'reply' tool to send results back with to="${from}". Never output a plain text response. ***`,
       parts: [{
         type: "text",

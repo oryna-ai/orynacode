@@ -494,7 +494,7 @@
     },
     "packages/opencode": {
       "name": "orynacode-ai",
-      "version": "1.16.6",
+      "version": "1.16.7",
       "bin": {
         "orynacode": "./bin/orynacode",
       },

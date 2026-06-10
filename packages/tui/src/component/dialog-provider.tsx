@@ -500,8 +500,11 @@ function ConnectLocal(props: { onClose: () => void }) {
     enabled: status() === "multiple",
     commands: [
       { name: "connect.local.list.up", title: "Up", category: "Dialog", run: () => setSelectedIndex((i) => Math.max(0, i - 1)) },
-      { name: "connect.local.list.down", title: "Down", category: "Dialog", run: () => setSelectedIndex((i) => Math.min(proxyUrls().length - 1, i + 1)) },
-      { name: "connect.local.list.confirm", title: "Connect", category: "Dialog", run: () => connect(proxyUrls()[selectedIndex()]) },
+      { name: "connect.local.list.down", title: "Down", category: "Dialog", run: () => setSelectedIndex((i) => Math.min(proxyUrls().length, i + 1)) },
+      { name: "connect.local.list.confirm", title: "Connect", category: "Dialog", run: () => {
+        if (selectedIndex() === proxyUrls().length) setManual(true)
+        else connect(proxyUrls()[selectedIndex()])
+      }},
       { name: "connect.local.list.back", title: "Back", category: "Dialog", run: () => setStatus("not-found") },
     ],
     bindings: [
@@ -509,6 +512,16 @@ function ConnectLocal(props: { onClose: () => void }) {
       { key: "down", cmd: "connect.local.list.down" },
       { key: "return", cmd: "connect.local.list.confirm" },
       { key: "escape", cmd: "connect.local.list.back" },
+    ],
+  }))
+
+  useBindings(() => ({
+    enabled: status() === "not-found",
+    commands: [
+      { name: "connect.local.notfound.enter", title: "Enter IP", category: "Dialog", run: () => setManual(true) },
+    ],
+    bindings: [
+      { key: "return", cmd: "connect.local.notfound.enter" },
     ],
   }))
 
@@ -642,8 +655,19 @@ function ConnectLocal(props: { onClose: () => void }) {
                   )
                 }}
               </For>
+              <box flexDirection="row" gap={1}>
+                <text fg={selectedIndex() === proxyUrls().length ? theme.primary : theme.textMuted}>
+                  {selectedIndex() === proxyUrls().length ? "●" : "○"}
+                </text>
+                <text
+                  fg={selectedIndex() === proxyUrls().length ? theme.primary : theme.textMuted}
+                  onMouseUp={() => setManual(true)}
+                >
+                  Enter IP manually
+                </text>
+              </box>
               <box paddingTop={1}>
-                <text fg={theme.textMuted}>↑↓ to select · enter to connect · esc to go back</text>
+                <text fg={theme.textMuted}>↑↓ to select · enter to connect or input IP · esc to go back</text>
               </box>
             </box>
           </Show>
@@ -667,6 +691,9 @@ function ConnectLocal(props: { onClose: () => void }) {
                 <text fg={theme.primary} onMouseUp={() => setManual(true)}>
                   ● Enter IP manually
                 </text>
+              </box>
+              <box paddingTop={1}>
+                <text fg={theme.textMuted}>enter to input address</text>
               </box>
               <box gap={1} paddingTop={1} flexDirection="row">
                 <text fg={theme.textMuted}>Don&apos;t have OrynaGate? Download at</text>

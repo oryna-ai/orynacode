@@ -224,6 +224,22 @@ function mapOrynaModels(data: Record<string, any>): Record<string, any> {
   return result
 }
 
+export async function reAuthOryna(): Promise<string> {
+  const port = await startOAuthServer()
+  const state = randomState()
+  const redirectUri = `http://127.0.0.1:${port}/callback`
+  const loginUrl = `${ORYNA_LOGIN_URL}?redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}`
+
+  const tokenPromise = waitForToken(state)
+  await open(loginUrl)
+
+  try {
+    return await tokenPromise
+  } finally {
+    stopOAuthServer()
+  }
+}
+
 export async function OrynaAuthPlugin(input: PluginInput): Promise<Hooks> {
   return {
     provider: {
@@ -251,15 +267,18 @@ export async function OrynaAuthPlugin(input: PluginInput): Promise<Hooks> {
 
         if (jwtExpired(jwt)) {
           if (!_refreshPromise) {
-            _refreshPromise = refreshJwt(jwt).catch(() => {
+            _refreshPromise = refreshJwt(jwt).catch(async () => {
               _refreshPromise = undefined
-              return jwt
+              log.info("oryna token refresh failed, removing stale auth")
+              await (input.client as any)._client.delete({ url: "/auth/{id}", path: { id: "oryna" } }).catch(() => {})
+              log.info("oryna stale auth removed")
+              return ""
             })
           }
           jwt = await _refreshPromise
           _refreshPromise = undefined
 
-          if (jwt !== auth.key) {
+          if (jwt && jwt !== auth.key) {
             await input.client.auth
               .set({
                 path: { id: "oryna" },
@@ -269,7 +288,7 @@ export async function OrynaAuthPlugin(input: PluginInput): Promise<Hooks> {
           }
         }
 
-        return { apiKey: jwt }
+        return jwt ? { apiKey: jwt } : {}
       },
       methods: [
         {
@@ -277,36 +296,20 @@ export async function OrynaAuthPlugin(input: PluginInput): Promise<Hooks> {
           label: "Login with Oryna AI (Browser)",
           authorize: async () => {
             try {
-              const port = await startOAuthServer()
-              const state = randomState()
-              const redirectUri = `http://127.0.0.1:${port}/callback`
-              const loginUrl = `${ORYNA_LOGIN_URL}?redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}`
-
-              const tokenPromise = waitForToken(state)
-
-              await open(loginUrl)
-
+              const tokenPromise = reAuthOryna()
               return {
-                url: loginUrl,
+                url: ORYNA_LOGIN_URL,
                 instructions: "Complete login in your browser. This window will close automatically when done.",
                 method: "auto" as const,
                 callback: async () => {
                   try {
-                    const token = await tokenPromise
-                    return {
-                      type: "success" as const,
-                      key: token,
-                    }
-                  } catch (err) {
-                    log.error("oryna login callback failed", { error: err })
+                    return { type: "success" as const, key: await tokenPromise }
+                  } catch {
                     return { type: "failed" as const }
-                  } finally {
-                    stopOAuthServer()
                   }
                 },
               }
-            } catch (err) {
-              log.error("oryna login authorize failed", { error: err })
+            } catch {
               return {
                 url: ORYNA_LOGIN_URL,
                 instructions: "Failed to start login server. Please use API key instead.",

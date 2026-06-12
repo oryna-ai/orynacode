@@ -128,6 +128,7 @@ export function SessionPreviewPane(props: {
     const s = status()
     if (s === "busy") return "working"
     if (s === "retry") return "retrying"
+    if (s === "needs_auth") return "needs auth"
     return "idle"
   })
 

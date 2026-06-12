@@ -157,6 +157,28 @@ export function createDialogProviderOptions() {
               dialog.replace(() => <ConnectLocal onClose={() => dialog.clear()} />)
               return
             }
+            if (providerID === "oryna") {
+              const result = await sdk.client.provider.oauth.authorize({
+                providerID: "oryna",
+                method: 0,
+              })
+              if (result.error) {
+                toast.show({ variant: "error", message: JSON.stringify(result.error) })
+                dialog.clear()
+                return
+              }
+              if (result.data?.method === "auto") {
+                dialog.replace(() => (
+                  <AutoMethod
+                    providerID="oryna"
+                    title="Login with Oryna AI (Browser)"
+                    index={0}
+                    authorization={result.data!}
+                  />
+                ))
+              }
+              return
+            }
             if (consoleManaged) return
 
             const methods = sync.data.provider_auth[providerID] ?? [
@@ -244,13 +266,13 @@ export function DialogProvider() {
   return <DialogSelect title="Connect a provider" options={options()} />
 }
 
-interface AutoMethodProps {
+export interface AutoMethodProps {
   index: number
   providerID: string
   title: string
   authorization: ProviderAuthAuthorization
 }
-function AutoMethod(props: AutoMethodProps) {
+export function AutoMethod(props: AutoMethodProps) {
   const { theme } = useTheme()
   const sdk = useSDK()
   const dialog = useDialog()

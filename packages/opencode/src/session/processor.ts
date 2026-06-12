@@ -952,7 +952,14 @@ export const layer = Layer.effect(
           sessionID: ctx.assistantMessage.sessionID,
           error: ctx.assistantMessage.error,
         })
-        yield* status.set(ctx.sessionID, { type: "idle" })
+        if (
+          error.name === "ProviderAuthError" ||
+          (error.data as any)?.statusCode === 401
+        ) {
+          yield* status.set(ctx.sessionID, { type: "needs_auth", providerID: String(input.model.providerID) })
+        } else {
+          yield* status.set(ctx.sessionID, { type: "idle" })
+        }
       })
 
       const process = Effect.fn("SessionProcessor.process")(function* (streamInput: LLM.StreamInput) {

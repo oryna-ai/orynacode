@@ -240,7 +240,7 @@ export const layer: Layer.Layer<
           question: Tool.init(question),
           lsp: Tool.init(lsptool),
           plan: Tool.init(plan),
-          reply: Tool.init(replytool),
+          collab_reply: Tool.init(replytool),
         })
 
         return {
@@ -260,7 +260,7 @@ export const layer: Layer.Layer<
             tool.search,
             tool.skill,
             tool.patch,
-            tool.reply,
+            tool.collab_reply,
             ...(flags.experimentalLspTool ? [tool.lsp] : []),
             ...(flags.experimentalPlanMode && flags.client === "cli" ? [tool.plan] : []),
           ],

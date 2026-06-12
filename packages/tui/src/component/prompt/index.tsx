@@ -389,7 +389,7 @@ export function Prompt(props: PromptProps) {
         name: "session.interrupt",
         category: "Session",
         hidden: true,
-        enabled: status().type !== "idle",
+        enabled: status().type === "busy" || status().type === "retry",
         run: () => {
           if (auto()?.visible) return
           if (!input.focused) return
@@ -1306,7 +1306,7 @@ export function Prompt(props: PromptProps) {
 
   const spinnerDef = createMemo(() => {
     const agent =
-      status().type !== "idle"
+      status().type === "busy" || status().type === "retry"
         ? (local.agent.list().find((a) => a.name === lastUserMessage()?.agent) ?? local.agent.current())
         : local.agent.current()
     const color = agent ? local.agent.color(agent.name) : theme.border
@@ -1504,7 +1504,7 @@ export function Prompt(props: PromptProps) {
         </box>
         <box width="100%" flexDirection="row" justifyContent="space-between">
           <Switch>
-            <Match when={status().type !== "idle"}>
+            <Match when={status().type === "busy" || status().type === "retry"}>
               <box
                 flexDirection="row"
                 gap={1}
@@ -1636,7 +1636,7 @@ export function Prompt(props: PromptProps) {
             </Match>
             <Match when={true}>{props.hint ?? <text />}</Match>
           </Switch>
-          <Show when={status().type !== "retry"}>
+          <Show when={status().type !== "retry" && status().type !== "needs_auth"}>
             <box gap={2} flexDirection="row">
               <Show when={editorContextLabelState() !== "none" ? editorFileLabelDisplay() : undefined}>
                 {(file) => (

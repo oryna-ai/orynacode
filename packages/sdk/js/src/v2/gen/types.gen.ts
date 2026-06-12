@@ -717,6 +717,10 @@ export type SessionStatus =
   | {
       type: "busy"
     }
+  | {
+      type: "needs_auth"
+      providerID: string
+    }
 
 export type GlobalEvent = {
   directory: string

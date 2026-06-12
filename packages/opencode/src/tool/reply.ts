@@ -12,7 +12,7 @@ export const Parameters = Schema.Struct({
 })
 
 export const ReplyTool = Tool.define(
-  "reply",
+  "collab_reply",
   Effect.gen(function* () {
     return {
       description:

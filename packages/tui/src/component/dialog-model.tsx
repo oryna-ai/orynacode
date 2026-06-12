@@ -1,6 +1,7 @@
 import { createMemo, createSignal } from "solid-js"
 import { useLocal } from "../context/local"
 import { useSync } from "../context/sync"
+import { useSDK } from "../context/sdk"
 import { map, pipe, flatMap, entries, filter, sortBy, take } from "remeda"
 import { DialogSelect } from "../ui/dialog-select"
 import { useDialog } from "../ui/dialog"
@@ -8,10 +9,12 @@ import { createDialogProviderOptions, DialogProvider } from "./dialog-provider"
 import { DialogVariant } from "./dialog-variant"
 import * as fuzzysort from "fuzzysort"
 import { useConnected } from "./use-connected"
+import type { ProviderAuthAuthorization } from "@opencode-ai/sdk/v2"
 
 export function DialogModel(props: { providerID?: string }) {
   const local = useLocal()
   const sync = useSync()
+  const sdk = useSDK()
   const dialog = useDialog()
   const [query, setQuery] = createSignal("")
 
@@ -129,6 +132,15 @@ export function DialogModel(props: { providerID?: string }) {
   })
 
   function onSelect(providerID: string, modelID: string) {
+    setQuery("")
+    const isOryna = providerID === "oryna"
+    const isOrynaConnected = isOryna && sync.data.provider_next.connected.includes("oryna")
+
+    if (isOryna && !isOrynaConnected) {
+      void triggerOrynaAuth(modelID)
+      return
+    }
+
     local.model.set({ providerID, modelID }, { recent: true })
     const list = local.model.variant.list()
     const cur = local.model.variant.selected()
@@ -141,6 +153,27 @@ export function DialogModel(props: { providerID?: string }) {
       return
     }
     dialog.clear()
+  }
+
+  async function triggerOrynaAuth(modelID: string) {
+    const result = await sdk.client.provider.oauth.authorize({
+      providerID: "oryna",
+      method: 0,
+    })
+    if (result.error || !result.data || result.data.method !== "auto") {
+      dialog.clear()
+      return
+    }
+    const { AutoMethod } = await import("./dialog-provider")
+    local.model.set({ providerID: "oryna", modelID }, { recent: true })
+    dialog.replace(() => (
+      <AutoMethod
+        index={0}
+        providerID="oryna"
+        title="Login with Oryna AI (Browser)"
+        authorization={result.data! as unknown as ProviderAuthAuthorization}
+      />
+    ))
   }
 
   return (

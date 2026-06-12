@@ -613,7 +613,7 @@ export function Session() {
       },
       run: async () => {
         const status = sync.data.session_status?.[route.sessionID]
-        if (status?.type !== "idle") await sdk.client.session.abort({ sessionID: route.sessionID }).catch(() => {})
+        if (status?.type === "busy" || status?.type === "retry") await sdk.client.session.abort({ sessionID: route.sessionID }).catch(() => {})
         const revert = session()?.revert?.messageID
         const message = messages().findLast((x) => (!revert || x.id < revert) && x.role === "user")
         if (!message) return
@@ -1120,6 +1120,18 @@ export function Session() {
     bindings: tuiConfig.keybinds.get("session.background"),
   }))
 
+  useBindings(() => ({
+    enabled: needsReAuth,
+    bindings: [
+      {
+        key: "ctrl+r",
+        desc: "Re-login with Oryna AI",
+        group: "Session",
+        cmd: () => { handleOrynaReAuth() },
+      },
+    ],
+  }))
+
   const revertInfo = createMemo(() => session()?.revert)
   const revertMessageID = createMemo(() => revertInfo()?.messageID)
 
@@ -1170,7 +1182,7 @@ export function Session() {
     await sdk.client.session.prompt({
       sessionID,
       agent: agent?.name,
-      system: `*** You are responding to a collaboration message. After completing the task, you MUST use the 'reply' tool to send results back with to="${from}". Never output a plain text response. ***`,
+      system: `*** You are responding to a collaboration message. After completing the task, you MUST use the 'collab_reply' tool to send results back with to="${from}". Never output a plain text response. ***`,
       parts: [{
         type: "text",
         text: `[Collaboration from ${from}, mode: ${agentName}]\n${content}`,
@@ -1191,6 +1203,22 @@ export function Session() {
     }
     lastWasOrynaGate = isOrynaGate
   })
+
+  const needsReAuth = createMemo(() => {
+    const s = sync.data.session_status[route.sessionID]
+    if (s?.type !== "needs_auth") return false
+    return s.providerID === "oryna"
+  })
+
+  async function handleOrynaReAuth() {
+    const { reAuthOryna } = await import("orynacode-ai/plugin/oryna")
+    try {
+      const token = await reAuthOryna()
+      await sdk.client.auth.set({ providerID: "oryna", auth: { type: "api", key: token } })
+      await sdk.client.instance.dispose()
+      await sync.bootstrap()
+    } catch {}
+  }
 
   return (
     <PathFormatterProvider path={session()?.directory}>
@@ -1331,6 +1359,17 @@ export function Session() {
                 </For>
               </scrollbox>
               <box flexShrink={0}>
+                <Show when={needsReAuth()}>
+                  <box paddingLeft={2} paddingRight={2} paddingTop={1} paddingBottom={1} flexDirection="row" justifyContent="space-between">
+                    <box>
+                      <text fg={theme.warning}>⚠ Session expired — </text>
+                      <text fg={theme.primary} onMouseUp={handleOrynaReAuth}>
+                        ● Login with Oryna AI (Browser)
+                      </text>
+                    </box>
+                    <text fg={theme.textMuted}>ctrl+r</text>
+                  </box>
+                </Show>
                 <Show when={permissions().length > 0}>
                   <PermissionPrompt
                     request={permissions()[0]}
@@ -1778,7 +1817,7 @@ function ToolPart(props: { last: boolean; part: ToolPart; message: AssistantMess
 
   // Hide tool if showDetails is false and tool completed successfully
   const shouldHide = createMemo(() => {
-    if (props.part.tool === "reply") return false
+    if (props.part.tool === "collab_reply") return false
     if (ctx.showDetails()) return false
     if (props.part.state.status !== "completed") return false
     return true
@@ -1844,7 +1883,7 @@ function ToolPart(props: { last: boolean; part: ToolPart; message: AssistantMess
         <Match when={display() === "skill"}>
           <Skill {...toolprops} />
         </Match>
-        <Match when={display() === "reply"}>
+        <Match when={display() === "collab_reply"}>
           <ReplyDisplay part={props.part} />
         </Match>
         <Match when={true}>
@@ -2350,7 +2389,7 @@ function Task(props: ToolProps) {
     const value = status()
     return (
       props.part.state.status === "running" ||
-      (props.metadata.background === true && value !== undefined && value.type !== "idle")
+      (props.metadata.background === true && value !== undefined && (value.type === "busy" || value.type === "retry"))
     )
   })
   const retry = createMemo(() => {
@@ -2684,7 +2723,7 @@ const toolDisplays = new Set([
   "todowrite",
   "question",
   "skill",
-  "reply",
+  "collab_reply",
 ])
 
 export function toolDisplay(tool: string) {

@@ -150,3 +150,25 @@ const table = sqliteTable("session", {
 - Keep delivery vocabulary explicit. Prompts steer by default and coalesce into the active activity at the next safe provider-turn boundary. Explicit `queue` inputs open FIFO future activities one at a time after the active activity settles.
 - Keep EventV2 replay owner claims separate from clustered Session execution ownership.
 - Keep the System Context algebra, registry, and built-ins in `src/system-context`; keep Context Source producers with their observed domains, and keep Session History selection plus Context Epoch persistence Session-owned.
+
+## Upstream Sync
+
+### Criteria
+
+| Trigger | Action |
+|---------|--------|
+| upstream has `security` / `CVE` fix | **Merge immediately** |
+| upstream `session/runner/` or `tool/executor/` has major changes | **Evaluate** |
+| upstream release major version bump (minor jumps 3+) | **Evaluate** |
+| Routine fixes, chores, test refactors | Ignore |
+| Data context / TUI refactors | Wait until stable |
+
+### Periodic Check
+
+```bash
+git fetch upstream
+git log --oneline upstream/dev ^main | wc -l
+git log --oneline upstream/dev ^main | grep -iE "session|runner|llm|tool|permission|security|CVE"
+```
+
+When commits accumulate to 80+ or keywords match, evaluate merging.

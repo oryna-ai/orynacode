@@ -1197,6 +1197,7 @@ export function Session() {
     const model = local.model.current()
     const isOrynaGate = model?.providerID === "orynagate"
     if (isOrynaGate && !lastWasOrynaGate) {
+      process.env.ORYNA_GATE_WORKSPACE = session()?.directory || process.cwd()
       startAgent()
     } else if (!isOrynaGate && lastWasOrynaGate) {
       stopAgent()

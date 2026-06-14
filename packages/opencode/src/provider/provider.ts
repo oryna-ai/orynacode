@@ -1521,9 +1521,9 @@ export const layer = Layer.effect(
               toPublicInfo(dbInfo),
             ),
           )
-          const opts = options ?? {}
-          const patch: Partial<Info> = providers[providerID] ? { options: opts } : { source: "custom", options: opts }
-          mergeProvider(providerID, patch)
+           const opts = options ?? {}
+           const patch: Partial<Info> = providers[providerID] ? { options: opts } : { source: "custom", options: opts }
+           mergeProvider(providerID, patch)
         }
 
         for (const [id, fn] of Object.entries(custom(dep))) {
@@ -1686,6 +1686,11 @@ export const layer = Layer.effect(
 
         if (baseURL !== undefined) options["baseURL"] = baseURL
         if (options["apiKey"] === undefined && provider.key) options["apiKey"] = provider.key
+        if (model.providerID === "orynagate") {
+          const workspace = path.basename(process.env.ORYNA_GATE_WORKSPACE || process.cwd())
+          const user = os.userInfo().username || "user"
+          options["apiKey"] = `sk-local-${user}-${workspace}`
+        }
         if (model.headers)
           options["headers"] = {
             ...options["headers"],

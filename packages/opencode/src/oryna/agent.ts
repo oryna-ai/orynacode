@@ -60,7 +60,7 @@ export function start() {
 
   const host = new URL(url).host
   const user = os.userInfo().username || "user"
-  const token = `sk-local-${user}-${path.basename(process.cwd())}`
+  const token = `sk-local-${user}-${path.basename(process.env.ORYNA_GATE_WORKSPACE || process.cwd())}`
   const wsUrl = `ws://${host}/ws?token=${token}&name=orynacode`
 
   const connect = () => {

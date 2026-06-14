@@ -328,6 +328,7 @@ export const run = Effect.fn("Tui.run")(function* (input: TuiInput) {
     win32FlushInputBuffer()
     if (output) process.stdout.write(output + "\n")
     })
+    process.env.ORYNA_GATE_WORKSPACE = input.directory
     startAgent()
   })
 

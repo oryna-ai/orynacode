@@ -228,6 +228,9 @@ export const run = Effect.fn("Tui.run")(function* (input: TuiInput) {
         const mode = (await renderer.waitForThemeMode(1000)) ?? "dark"
         if (renderer.isDestroyed) return
 
+        process.env.ORYNA_GATE_WORKSPACE = getOrynaGateId(input.directory || process.cwd())
+        startAgent()
+
         await render(() => {
           return (
             <ErrorBoundary fallback={(error, reset) => <ErrorComponent error={error} reset={reset} mode={mode} />}>
@@ -328,8 +331,6 @@ export const run = Effect.fn("Tui.run")(function* (input: TuiInput) {
     win32FlushInputBuffer()
     if (output) process.stdout.write(output + "\n")
     })
-    process.env.ORYNA_GATE_WORKSPACE = getOrynaGateId(input.directory || process.cwd())
-    startAgent()
   })
 
 function App(props: { onSnapshot?: () => Promise<string[]>; pluginHost: TuiPluginHost }) {

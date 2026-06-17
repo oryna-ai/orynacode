@@ -7,6 +7,7 @@ import { NoSuchModelError, type Provider as SDK } from "ai"
 import { Log } from "@opencode-ai/core/util/log"
 import { Npm } from "@opencode-ai/core/npm"
 import { Hash } from "@opencode-ai/core/util/hash"
+import { getOrynaGateId } from "../oryna/agent"
 import { Plugin } from "../plugin"
 import { serviceUse } from "@opencode-ai/core/effect/service-use"
 import { type LanguageModelV3 } from "@ai-sdk/provider"
@@ -1687,9 +1688,9 @@ export const layer = Layer.effect(
         if (baseURL !== undefined) options["baseURL"] = baseURL
         if (options["apiKey"] === undefined && provider.key) options["apiKey"] = provider.key
         if (model.providerID === "orynagate") {
-          const workspace = path.basename(process.env.ORYNA_GATE_WORKSPACE || process.cwd())
+          const id = getOrynaGateId(process.cwd())
           const user = os.userInfo().username || "user"
-          options["apiKey"] = `sk-local-${user}-${workspace}`
+          options["apiKey"] = `sk-local-${user}-${id}`
         }
         if (model.headers)
           options["headers"] = {
@@ -1834,7 +1835,7 @@ export const layer = Layer.effect(
       const s = yield* InstanceState.get(state)
       const envs = yield* env.all()
       const key = `${model.providerID}/${model.id}`
-      if (s.models.has(key)) return s.models.get(key)!
+      if (s.models.has(key) && model.providerID !== "orynagate") return s.models.get(key)!
 
       const provider = s.providers[model.providerID]
       return yield* EffectPromise.refineRejection(

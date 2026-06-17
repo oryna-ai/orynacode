@@ -74,7 +74,7 @@ import { setPreLayoutSiblingMargin } from "../../util/layout"
 import { useTuiConfig } from "../../config"
 import { useClipboard } from "../../context/clipboard"
 import { agentStatus } from "../../context/agent"
-import { start as startAgent, setMessageHandler, stop as stopAgent, setReady } from "orynacode-ai/oryna/agent"
+import { start as startAgent, setMessageHandler, stop as stopAgent, setReady, getOrynaGateId } from "orynacode-ai/oryna/agent"
 import { nextThinkingMode, reasoningSummary, useThinkingMode, type ThinkingMode } from "../../context/thinking"
 import { getScrollAcceleration } from "../../util/scroll"
 import { collapseToolOutput } from "../../util/collapse-tool-output"
@@ -1197,7 +1197,7 @@ export function Session() {
     const model = local.model.current()
     const isOrynaGate = model?.providerID === "orynagate"
     if (isOrynaGate && !lastWasOrynaGate) {
-      process.env.ORYNA_GATE_WORKSPACE = session()?.directory || process.cwd()
+      process.env.ORYNA_GATE_WORKSPACE = getOrynaGateId(session()?.directory || process.cwd())
       startAgent()
     } else if (!isOrynaGate && lastWasOrynaGate) {
       stopAgent()

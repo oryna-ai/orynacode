@@ -3,6 +3,14 @@ import { setAgentStatus, agentStatus } from "./agent-signal"
 import os from "os"
 import path from "path"
 
+export function getOrynaGateId(dir: string): string {
+  try {
+    const config = JSON.parse(readFileSync(path.join(dir, ".orynagate"), "utf-8"))
+    if (config.id && typeof config.id === "string") return config.id
+  } catch {}
+  return path.basename(dir)
+}
+
 export function setReady(ready: boolean) {
   const s = agentStatus()
   setAgentStatus({ ...s, ready })

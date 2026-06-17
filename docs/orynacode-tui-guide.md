@@ -1,6 +1,6 @@
 # OrynaCode TUI 使用指南
 
-> **OrynaCode** 是一个终端 AI 编码代理，在命令行中帮助完成软件工程任务。
+> **OrynaCode** 是基于 [OpenCode](https://github.com/anomalyco/opencode)（MIT 协议）构建的 AI 编程助手，专为 Oryna AI 平台定制。
 
 ## 目录
 

@@ -10,6 +10,7 @@ OrynaGate 是 OrynaCode 的远程协作方案。通过局域网部署 OrynaGate 
 4. [collab_reply 协作回复工具](#4-collab_reply-协作回复工具)
 5. [协作消息格式](#5-协作消息格式)
 6. [模式切换](#6-模式切换)
+7. [项目标识配置 (.orynagate)](#7-项目标识配置-orynagate)
 
 ---
 
@@ -214,6 +215,65 @@ Never output a plain text response. ***
 ```
 
 OrynaCode 会自动识别前缀，切换到对应 Agent 模式后再执行任务。
+
+---
+
+## 7. 项目标识配置 (.orynagate)
+
+### 7.1 为什么需要
+
+OrynaGate 通过 `sk-local-{用户名}-{项目标识}` 格式的 API Key 来识别每个用户的项目。默认情况下，项目标识来自文件夹名。
+
+但这有个问题：**同一个项目在不同人电脑上文件夹名可能不同**。
+
+```
+张三：/home/zhangsan/my-code    → sk-local-zhangsan-my-code
+李四：/work/project-x           → sk-local-lisi-project-x
+```
+
+两个人在同一项目的文件会分散到 OrynaGate 的两个不同 workspace 下，无法归类到一起。
+
+### 7.2 解决方案
+
+在项目根目录创建一个 `.orynagate` 文件，声明统一的项目标识：
+
+```json
+{
+  "id": "orynacode",
+  "name": "OrynaCode",
+  "team": "platform"
+}
+```
+
+| 字段 | 必需 | 说明 |
+|------|------|------|
+| `id` | ✅ | 项目唯一标识，用于 OrynaGate 归类。建议用小写 + 连字符 |
+| `name` | ❌ | 显示名称，OrynaGate 界面展示用 |
+| `team` | ❌ | 团队名，将来可按 team 分组 |
+
+### 7.3 效果
+
+```
+张三：/home/zhangsan/my-code    + .orynagate id="orynacode" → sk-local-zhangsan-orynacode
+李四：/work/project-x           + .orynagate id="orynacode" → sk-local-lisi-orynacode
+```
+
+OrynaGate 看到同一个 `orynacode` ID，自动归类到同一个项目下。
+
+### 7.4 读取优先级
+
+```
+1. .orynagate → id 字段
+2. 文件夹名（fallback）
+```
+
+如果 `.orynagate` 文件不存在或格式错误，降级使用文件夹名，不影响正常使用。
+
+### 7.5 使用建议
+
+- 放到项目根目录，与 `.gitignore` 同级
+- 建议加入 `.gitignore`，让每个人维护自己的 `.orynagate`
+- `id` 取项目仓库名或团队内统一的代号，如 `orynacode`、`my-team-app`
 
 ---
 

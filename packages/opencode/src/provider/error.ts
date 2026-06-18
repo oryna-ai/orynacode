@@ -165,7 +165,7 @@ export type ParsedAPICallError =
 export function parseAPICallError(input: { providerID: ProviderV2.ID; error: APICallError }): ParsedAPICallError {
   const m = message(input.providerID, input.error)
   const body = json(input.error.responseBody)
-  if (isContextOverflow(m) || input.error.statusCode === 413 || body?.error?.code === "context_length_exceeded") {
+  if (isContextOverflow(m) || body?.error?.code === "context_length_exceeded") {
     return {
       type: "context_overflow",
       message: m,

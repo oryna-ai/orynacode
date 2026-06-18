@@ -930,6 +930,7 @@ export const layer = Layer.effect(
             return
           }
           ctx.needsCompaction = true
+          ctx.assistantMessage.error = error
           yield* events.publish(Session.Event.Error, { sessionID: ctx.sessionID, error })
           return
         }

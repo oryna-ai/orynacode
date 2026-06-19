@@ -12,6 +12,7 @@ import { Session } from "./session"
 import { LLM } from "./llm"
 import { MessageV2 } from "./message-v2"
 import { isOverflow } from "./overflow"
+import { sendReply } from "../oryna/reply-service"
 import { PartID } from "./schema"
 import type { SessionID } from "./schema"
 import { SessionRetry } from "./retry"
@@ -913,6 +914,34 @@ export const layer = Layer.effect(
           })
         }
         ctx.toolcalls = {}
+
+        const msgs = yield* session.messages({ sessionID: ctx.sessionID }).pipe(Effect.orDie)
+        const lastUser = msgs.findLast((m) => m.info.role === "user")
+        const collabMatch = (lastUser?.info as any)?.system?.match(/orynagate:from=(\S+)/)
+        if (collabMatch) {
+          const userParts = lastUser?.parts ?? []
+          const alreadyReplied = userParts.some((p) => p.type === "text" && (p as any).text?.includes("✓ Replied"))
+          if (!alreadyReplied) {
+            const assistantParts = msgs.findLast((m) => m.info.role === "assistant")?.parts ?? []
+            const texts = assistantParts
+              .filter((p) => p.type === "text")
+              .map((p: any) => p.text)
+              .join("")
+              .trim()
+            sendReply(texts || "(collaboration task completed)", collabMatch[1])
+
+            const collabTextPart = userParts.find(
+              (p) => p.type === "text" && (p as any).text?.includes("[Collaboration from"),
+            ) as any
+            if (collabTextPart) {
+              yield* session.updatePart({
+                ...collabTextPart,
+                text: collabTextPart.text.replace("]\n", "]  ✓ Replied\n"),
+              })
+            }
+          }
+        }
+
         ctx.assistantMessage.time.completed = Date.now()
         yield* session.updateMessage(ctx.assistantMessage)
       })

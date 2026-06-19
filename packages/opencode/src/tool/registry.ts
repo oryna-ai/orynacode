@@ -260,7 +260,6 @@ export const layer: Layer.Layer<
             tool.search,
             tool.skill,
             tool.patch,
-            tool.collab_reply,
             ...(flags.experimentalLspTool ? [tool.lsp] : []),
             ...(flags.experimentalPlanMode && flags.client === "cli" ? [tool.plan] : []),
           ],

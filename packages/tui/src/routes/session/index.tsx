@@ -1182,7 +1182,7 @@ export function Session() {
     await sdk.client.session.prompt({
       sessionID,
       agent: agent?.name,
-      system: `*** You are responding to a collaboration message. After completing the task, you MUST use the 'collab_reply' tool to send results back with to="${from}". Never output a plain text response. ***`,
+      system: `*** You are responding to a collaboration message. Reply with your findings and results. Your response will be sent back automatically. ***\n<!-- orynagate:from=${from} -->`,
       parts: [{
         type: "text",
         text: `[Collaboration from ${from}, mode: ${agentName}]\n${content}`,

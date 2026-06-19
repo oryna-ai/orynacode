@@ -63,7 +63,7 @@ function show(out: string) {
 
 const cli = yargs(args)
   .parserConfiguration({ "populate--": true })
-  .scriptName("opencode")
+  .scriptName("orynacode")
   .wrap(100)
   .help("help", "show help")
   .alias("help", "h")

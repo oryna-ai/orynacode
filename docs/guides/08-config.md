@@ -1,8 +1,14 @@
 # 配置参考与常见问题
 
+## 目录
+
+1. [配置参考](#1-配置参考)
+2. [常见问题](#2-常见问题)
+3. [HTTP 错误码参考](#3-http-错误码参考)
+
 ## 1. 配置参考
 
-### 10.1 orynacode.json
+### 1.1 orynacode.json
 
 `orynacode.json` 是 OrynaCode 的项目配置文件，放在项目根目录或 `.orynacode/` 目录下。
 
@@ -61,7 +67,7 @@
 }
 ```
 
-### 10.2 tui.json
+### 1.2 tui.json
 
 `tui.json` 是 TUI（终端界面）的配置文件，放在 `.orynacode/tui.json`。
 
@@ -102,7 +108,7 @@
 }
 ```
 
-### 10.3 .orynacode/ 目录结构
+### 1.3 .orynacode/ 目录结构
 
 ```
 项目根目录/
@@ -122,7 +128,7 @@
 
 ## 2. 常见问题
 
-### 11.1 Oryna AI Token 过期
+### 2.1 Oryna AI Token 过期
 
 **现象**：发送消息后收到 `Unauthorized` 错误。
 
@@ -136,7 +142,7 @@
 
 > 如果提示没有出现，手动输入 `/connect` 选择 Oryna AI 重新登录。
 
-### 11.2 模型不响应
+### 2.2 模型不响应
 
 **现象**：选择模型后发消息，但一直没有回复。
 
@@ -146,7 +152,7 @@
 - 网络问题 — 检查网络连接
 - 模型被禁用 — 在模型列表中检查是否有禁用标识
 
-### 11.3 子代理卡住
+### 2.3 子代理卡住
 
 **现象**：子代理一直显示 loading 或不前进。
 
@@ -155,13 +161,13 @@
 - 按 `escape` 中断子代理
 - 返回父 Session（`↑`）继续其他工作
 
-### 11.4 会话太长
+### 2.4 会话太长
 
 **现象**：AI 回复变慢或提示上下文超出限制。
 
 **解决**：按 `<leader>c` 压缩 Session。AI 会自动生成摘要替换历史消息，释放上下文空间。
 
-### 11.5 工具被频繁拒绝
+### 2.5 工具被频繁拒绝
 
 **现象**：每次 AI 调用工具都需要手动确认。
 
@@ -189,7 +195,7 @@
 }
 ```
 
-### 11.6 如何安装和更新
+### 2.6 如何安装和更新
 
 **安装**：
 
@@ -210,6 +216,43 @@ brew upgrade orynacode
 ```
 
 **版本查看**：侧边栏（`<leader>b`）显示当前版本号。
+
+---
+
+## 3. HTTP 错误码参考
+
+当 LLM 请求返回错误时，OrynaCode 根据 HTTP 状态码和响应内容分类处理。
+
+### 错误码速查表
+
+| HTTP | Error Description | Typical Scenario | Classification | Shown to User | Auto Compact | Retry |
+|------|------------------|-----------------|---------------|--------------|-------------|-------|
+| 400 | Bad Request | Token/context overflow (body contains overflow keywords) | context_overflow | ✅ (v1.16.14+) | ✅ | ❌ |
+| 400 | Bad Request | Invalid parameter or other bad request | api_error | ✅ | ❌ | ❌ |
+| 401 | Unauthorized | Auth expired or missing API key | ProviderAuthError / api_error | ✅ needs_auth | ❌ | ❌ |
+| 402 | Payment Required | Quota exhausted or billing required | api_error | ✅ | ❌ | ❌ |
+| 403 | Forbidden | Access denied by provider | api_error | ✅ | ❌ | ❌ |
+| 413 | Payload Too Large | Request body exceeds server byte limit | api_error | ✅ | ❌ | ❌ |
+| 422 | Unprocessable Content | Token overflow (body contains overflow keywords) | context_overflow | ✅ (v1.16.14+) | ✅ | ❌ |
+| 422 | Unprocessable Content | Validation failure (other causes) | api_error | ✅ | ❌ | ❌ |
+| 429 | Too Many Requests | Rate limit exceeded | api_error | ✅ | ❌ | ✅ |
+| 500 | Internal Server Error | Provider server error | api_error (retryable) | ✅ | ❌ | ✅ |
+| 503 | Service Unavailable | Provider overloaded or unavailable | api_error (retryable) | ✅ | ❌ | ✅ |
+
+### 分类说明
+
+| 分类 | 系统行为 |
+|------|---------|
+| `api_error` | 显示错误消息，记录到 assistant message。用户可见。 |
+| `context_overflow` | 检测到上下文溢出时，自动触发会话压缩。v1.16.14 起同时显示错误给用户。 |
+| `ProviderAuthError` | 401 认证失败时，Session 底部显示 "Session expired — Login with Oryna AI"，`Ctrl+R` 可重新登录。 |
+| `api_error (retryable)` | 自动重试（指数退避），重试耗尽后显示最终错误。 |
+
+### 错误显示位置
+
+Session 消息区域以红色左边框展示错误信息：
+
+![错误显示](images/placeholder.png)
 
 ---
 

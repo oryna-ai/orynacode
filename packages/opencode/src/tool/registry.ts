@@ -13,7 +13,6 @@ import { WebFetchTool } from "./webfetch"
 import { WriteTool } from "./write"
 import { InvalidTool } from "./invalid"
 import { SkillTool } from "./skill"
-import { ReplyTool } from "./reply"
 import * as Tool from "./tool"
 import { Config } from "@/config/config"
 import { type ToolContext as PluginToolContext, type ToolDefinition } from "@opencode-ai/plugin"
@@ -131,7 +130,6 @@ export const layer: Layer.Layer<
     const edit = yield* EditTool
     const greptool = yield* GrepTool
     const skilltool = yield* SkillTool
-    const replytool = yield* ReplyTool
     const patchtool = yield* ApplyPatchTool
     const agent = yield* Agent.Service
 
@@ -240,7 +238,6 @@ export const layer: Layer.Layer<
           question: Tool.init(question),
           lsp: Tool.init(lsptool),
           plan: Tool.init(plan),
-          collab_reply: Tool.init(replytool),
         })
 
         return {

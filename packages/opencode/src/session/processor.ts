@@ -928,7 +928,11 @@ export const layer = Layer.effect(
               .map((p: any) => p.text)
               .join("")
               .trim()
-            sendReply(texts || "(collaboration task completed)", collabMatch[1])
+            const failedCollab = assistantParts.find(
+              (p) => p.type === "tool" && (p as any).tool === "collab_reply" && (p as any).state?.status === "error",
+            ) as any
+            const replyContent = failedCollab?.state?.input?.content || texts || "(collaboration task completed)"
+            sendReply(replyContent, collabMatch[1])
 
             const collabTextPart = userParts.find(
               (p) => p.type === "text" && (p as any).text?.includes("[Collaboration from"),

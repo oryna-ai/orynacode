@@ -239,32 +239,51 @@ OrynaGate 通过 `sk-local-{用户名}-{项目标识}` 格式的 API Key 来识�
 
 ```json
 {
-  "id": "orynacode",
-  "name": "OrynaCode",
-  "team": "platform"
+  "ticket": "649310e5adbdc2879544b4f9",
+  "id": "laiyou.llm",
+  "name": "Oryna Cloud",
+  "team": ""
 }
 ```
 
 | 字段 | 必需 | 说明 |
 |------|------|------|
-| `id` | ✅ | 项目唯一标识，用于 OrynaGate 归类。建议用小写 + 连字符 |
+| `ticket` | ❌ | 云端验证 ticket。存在时 key 为 `sk-ticket-{user}-{ticket}` |
+| `id` | ✅* | 项目唯一标识，用于 OrynaGate 归类。`ticket` 不存在时用于 key 生成 |
 | `name` | ❌ | 显示名称，OrynaGate 界面展示用 |
 | `team` | ❌ | 团队名，将来可按 team 分组 |
 
+*`ticket` 存在时 `id` 可不填。
+
 ### 7.3 效果
+
+**无 .orynagate（默认）**：
+
+```
+sk-local-{user}-{文件夹名}
+```
+
+**有 .orynagate，仅 `id`**：
 
 ```
 张三：/home/zhangsan/my-code    + .orynagate id="orynacode" → sk-local-zhangsan-orynacode
 李四：/work/project-x           + .orynagate id="orynacode" → sk-local-lisi-orynacode
 ```
 
-OrynaGate 看到同一个 `orynacode` ID，自动归类到同一个项目下。
+**有 .orynagate，包含 `ticket`**：
+
+```
+sk-ticket-{user}-{ticket}
+```
+
+OrynaGate 看到同一个 `id` 或 `ticket`，自动归类到同一个项目下。
 
 ### 7.4 读取优先级
 
 ```
-1. .orynagate → id 字段
-2. 文件夹名（fallback）
+1. .orynagate → ticket 字段 → sk-ticket-{user}-{ticket}
+2. .orynagate → id 字段    → sk-local-{user}-{id}
+3. 文件夹名（fallback）     → sk-local-{user}-{文件夹名}
 ```
 
 如果 `.orynagate` 文件不存在或格式错误，降级使用文件夹名，不影响正常使用。

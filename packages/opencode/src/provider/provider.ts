@@ -7,7 +7,7 @@ import { NoSuchModelError, type Provider as SDK } from "ai"
 import { Log } from "@opencode-ai/core/util/log"
 import { Npm } from "@opencode-ai/core/npm"
 import { Hash } from "@opencode-ai/core/util/hash"
-import { getOrynaGateId } from "../oryna/agent"
+import { getOrynaGateKey } from "../oryna/agent"
 import { Plugin } from "../plugin"
 import { serviceUse } from "@opencode-ai/core/effect/service-use"
 import { type LanguageModelV3 } from "@ai-sdk/provider"
@@ -1688,9 +1688,7 @@ export const layer = Layer.effect(
         if (baseURL !== undefined) options["baseURL"] = baseURL
         if (options["apiKey"] === undefined && provider.key) options["apiKey"] = provider.key
         if (model.providerID === "orynagate") {
-          const id = getOrynaGateId(process.cwd())
-          const user = os.userInfo().username || "user"
-          options["apiKey"] = `sk-local-${user}-${id}`
+          options["apiKey"] = getOrynaGateKey(process.env.ORYNA_GATE_WORKSPACE || process.cwd())
         }
         if (model.headers)
           options["headers"] = {

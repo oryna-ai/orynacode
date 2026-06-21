@@ -7,7 +7,7 @@ OrynaGate 是 OrynaCode 的远程协作方案。通过局域网部署 OrynaGate 
 1. [OrynaGate 是什么](#1-orynagate-是什么)
 2. [连接 OrynaGate](#2-连接-orynagate)
 3. [协作工作流](#3-协作工作流)
-4. [collab_reply 协作回复工具](#4-collab_reply-协作回复工具)
+4. [协作自动回复](#4-协作自动回复)
 5. [协作消息格式](#5-协作消息格式)
 6. [模式切换](#6-模式切换)
 7. [项目标识配置 (.orynagate)](#7-项目标识配置-orynagate)
@@ -32,10 +32,10 @@ OrynaGate 是一个局域网 LLM 网关服务（默认端口 9527）。部署后
     │              │             │
     │              │  转发请求    │
     │              ├──────────►  │
-    │              │           AI 执行任务
-    │              │   ◄─────────┤
-    │              │  collab_reply
-    │   ◄──────────┤             │
+     │              │           AI 执行任务
+     │              │   ◄─────────┤
+     │              │  自动回复     │
+     │   ◄──────────┤             │
     │   返回结果    │             │
 ```
 
@@ -99,9 +99,11 @@ sk-local-lishan-orynaclaw
 当其他用户通过 OrynaGate 向你发送协作请求时：
 
 1. OrynaCode 收到协作消息（包含任务描述和发送方标识）
-2. 自动创建一个 Session，AI 收到包含 `from` 标识的 system prompt
+2. 自动创建一个 Session，AI 收到包含发送方标识的 system prompt
 3. AI 按照当前 Agent 模式（build / plan）执行任务
-4. 任务完成后，AI **必须**调用 `collab_reply` 工具将结果发回给请求方
+4. 任务完成后，**系统自动**将 AI 的回复发送回请求方，并在消息中标记 `✓ Replied`
+
+> 协作回复是**全自动**的。AI 只需正常输出任务结果，系统会在处理完成后自动包装并发送回复。不需要手动调用任何工具。
 
 ### 3.3 发送协作消息（Web 端）
 
@@ -109,60 +111,48 @@ sk-local-lishan-orynaclaw
 
 ---
 
-## 4. collab_reply 协作回复工具
+## 4. 协作自动回复
 
-`collab_reply` 是 OrynaGate 协作的**核心工具**——LLM 完成任务后，通过这个工具将结果发送回请求方。
+OrynaCode 的协作回复是**全自动**的——AI 正常输出文本，系统在任务完成后自动将结果发送回请求方，并在消息中标记 `✓ Replied`。
 
-### 4.1 为什么需要这个工具
+### 4.1 工作原理
 
-在协作模式下，LLM 的回复**不是**显示在当前对话中，而是需要发送回远程请求方。`collab_reply` 就是用来做这件事的。它确保：
+1. 协作消息到来 → AI 开始执行任务
+2. AI 正常输出分析和结果（文本、代码块等）
+3. 任务完成后，系统检测到这是协作 session，**自动**收集 AI 的输出文本
+4. 通过 WebSocket 发送回 OrynaGate 服务端
+5. 在协作消息的 header 中追加 `✓ Replied` 标记
 
-- 结果准确地到达正确的接收方（通过 `to` 参数匹配）
-- 回复格式化地展示在 OrynaGate 的 Web 界面上
-- 协作流程完整闭环
+```
+[Collaboration from console, mode: plan]  ✓ Replied
+分析结果：OrynaCode 是一个基于 OpenCode 构建的...
+```
 
-### 4.2 工具参数
+### 4.2 自动回复失效保护
 
-| 参数 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| `content` | string | 是 | 回复内容。保持简洁，清晰传达结果。 |
-| `to` | string | 否 | 接收方标识。必须匹配系统 prompt 中的 `from` 值。 |
+如果 AI 的输出为空（例如任务被中断、工具调用失败等），系统会发送兜底消息 `(collaboration task completed)` 并同样标记 `✓ Replied`，确保发送方知道任务已处理。
 
-### 4.3 使用示例
-
-当 LLM 完成协作任务后，会看到类似这样的消息：
-
-![协作回复完成](images/collab-reply.png)
-
-在对话中显示为 `↩ Replied to collaboration message`。
-
-### 4.4 完整协作流程
+### 4.3 完整协作流程
 
 ```
 1. 用户 A 在 OrynaGate Web 上发起请求
-   └─ "帮我分析 orynacode 项目的架构" 发给用户 B (sk-local-lishan-orynaclaw)
+   └─ "帮我分析 orynacode 项目的架构" 发给用户 B
 
 2. OrynaGate 转发给用户 B 的 OrynaCode
-   └─ System: "你正在回应协作消息。完成后 MUST 使用 collab_reply 工具，to='sk-local-...'"
+   └─ System: "你是协作参与者，请直接回复分析结果"
 
 3. OrynaCode 的 AI 收到消息，开始执行
    └─ 读取代码、分析架构、整理结果
 
-4. AI 调用 collab_reply 工具
-   └─ collab_reply(content="OrynaCode 采用...", to="sk-local-...")
+4. AI 正常输出文本结果，任务完成
+   └─ 系统检测到协作 session
 
-5. reply-service 收到回复内容
-   └─ 通过 WebSocket 发送给 OrynaGate 服务端
+5. 系统自动发送回复
+   └─ sendReply(assistant_output, from)
 
 6. OrynaGate 将结果返回给用户 A
    └─ Web 界面显示分析结果
 ```
-
-### 4.5 注意事项
-
-- **必须使用**：在协作场景下，LLM 的系统 prompt 会明确要求使用 `collab_reply`，不要直接输出文本
-- **`to` 参数**：确保回复发给正确的请求方。系统 prompt 中的 `from` 值就是 `to` 参数应该填的值
-- **内容格式**：回复内容应该结构化、清晰，可以是文本、代码、文件路径等
 
 ---
 
@@ -173,10 +163,11 @@ sk-local-lishan-orynaclaw
 当收到协作消息时，OrynaCode 会注入以下 System prompt：
 
 ```
-*** You are responding to a collaboration message. After completing the task,
-you MUST use the 'collab_reply' tool to send results back with to="{from}".
-Never output a plain text response. ***
+*** You are responding to a collaboration message. Reply with your findings
+and results. Your response will be sent back automatically. ***
 ```
+
+AI 无需手动调用任何工具——正常输出任务结果即可，系统会在处理完成后自动发送回复。
 
 ### 5.2 用户消息格式
 

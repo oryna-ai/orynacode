@@ -229,7 +229,7 @@ export const run = Effect.fn("Tui.run")(function* (input: TuiInput) {
         if (renderer.isDestroyed) return
 
         process.env.ORYNA_GATE_WORKSPACE = input.directory || process.cwd()
-        startAgent()
+        if (process.env.OPENCODE_CLIENT !== "desktop") startAgent()
 
         await render(() => {
           return (
@@ -710,6 +710,7 @@ function App(props: { onSnapshot?: () => Promise<string[]>; pluginHost: TuiPlugi
         title: "Connect provider",
         suggested: !connected(),
         slashName: "connect",
+        hidden: process.env.OPENCODE_CLIENT === "desktop",
         run: () => {
           dialog.replace(() => <DialogProviderList />)
         },

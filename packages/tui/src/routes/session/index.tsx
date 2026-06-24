@@ -1191,16 +1191,29 @@ export function Session() {
     })
   })
 
+  createEffect(() => {
+    const msgs = (sync.data.message[route.sessionID] as any[]) ?? []
+    const lastUser = msgs.findLast((m: any) => m.role === "user")
+    if (!lastUser?.system) return
+    const m = lastUser.system.match(/collab:agent=(\S+)/)
+    if (!m) return
+    if (local.agent.current()?.name !== m[1]) {
+      local.agent.set(m[1])
+    }
+  })
+
   // connect/disconnect WS based on selected model
   let lastWasOrynaGate = false
   createEffect(() => {
     const model = local.model.current()
     const isOrynaGate = model?.providerID === "orynagate"
-    if (isOrynaGate && !lastWasOrynaGate) {
-      process.env.ORYNA_GATE_WORKSPACE = session()?.directory || process.cwd()
-      startAgent()
-    } else if (!isOrynaGate && lastWasOrynaGate) {
-      stopAgent()
+    if (process.env.OPENCODE_CLIENT !== "desktop") {
+      if (isOrynaGate && !lastWasOrynaGate) {
+        process.env.ORYNA_GATE_WORKSPACE = session()?.directory || process.cwd()
+        startAgent()
+      } else if (!isOrynaGate && lastWasOrynaGate) {
+        stopAgent()
+      }
     }
     lastWasOrynaGate = isOrynaGate
   })

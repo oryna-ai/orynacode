@@ -1,5 +1,6 @@
 import { PermissionV1 } from "@opencode-ai/core/v1/permission"
 import { Agent } from "@/agent/agent"
+import { GlobalBus } from "@/bus/global"
 import { SessionV1 } from "@opencode-ai/core/v1/session"
 import { EventV2Bridge } from "@/event-v2-bridge"
 import { Command } from "@/command"
@@ -410,6 +411,22 @@ export const sessionHandlers = HttpApiBuilder.group(InstanceHttpApi, "session", 
       return yield* session.updatePart(payload)
     })
 
+    const focus = Effect.fn("SessionHttpApi.focus")(function* (ctx: {
+      params: { sessionID: SessionID }
+    }) {
+      const info = yield* requireSession(ctx.params.sessionID)
+      yield* Effect.sync(() => {
+        GlobalBus.emit("event", {
+          directory: info.directory,
+          payload: {
+            type: "tui.session.select",
+            properties: { sessionID: ctx.params.sessionID },
+          },
+        })
+      })
+      return true
+    })
+
     return handlers
       .handle("list", list)
       .handle("status", status)
@@ -423,6 +440,7 @@ export const sessionHandlers = HttpApiBuilder.group(InstanceHttpApi, "session", 
       .handle("remove", remove)
       .handle("update", update)
       .handleRaw("fork", forkRaw)
+      .handle("focus", focus)
       .handle("abort", abort)
       .handle("init", init)
       .handle("share", share)

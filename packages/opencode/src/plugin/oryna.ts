@@ -291,34 +291,38 @@ export async function OrynaAuthPlugin(input: PluginInput): Promise<Hooks> {
         return jwt ? { apiKey: jwt } : {}
       },
       methods: [
-        {
-          type: "oauth",
-          label: "Login with Oryna AI (Browser)",
-          authorize: async () => {
-            try {
-              const tokenPromise = reAuthOryna()
-              return {
-                url: ORYNA_LOGIN_URL,
-                instructions: "Complete login in your browser. This window will close automatically when done.",
-                method: "auto" as const,
-                callback: async () => {
+        ...(process.env.OPENCODE_CLIENT !== "desktop"
+          ? [
+              {
+                type: "oauth",
+                label: "Login with Oryna AI (Browser)",
+                authorize: async () => {
                   try {
-                    return { type: "success" as const, key: await tokenPromise }
+                    const tokenPromise = reAuthOryna()
+                    return {
+                      url: ORYNA_LOGIN_URL,
+                      instructions: "Complete login in your browser. This window will close automatically when done.",
+                      method: "auto" as const,
+                      callback: async () => {
+                        try {
+                          return { type: "success" as const, key: await tokenPromise }
+                        } catch {
+                          return { type: "failed" as const }
+                        }
+                      },
+                    }
                   } catch {
-                    return { type: "failed" as const }
+                    return {
+                      url: ORYNA_LOGIN_URL,
+                      instructions: "Failed to start login server. Please use API key instead.",
+                      method: "code" as const,
+                      callback: async () => ({ type: "failed" as const }),
+                    }
                   }
                 },
-              }
-            } catch {
-              return {
-                url: ORYNA_LOGIN_URL,
-                instructions: "Failed to start login server. Please use API key instead.",
-                method: "code" as const,
-                callback: async () => ({ type: "failed" as const }),
-              }
-            }
-          },
-        },
+              } as const,
+            ]
+          : []),
         {
           type: "api",
           label: "API key",

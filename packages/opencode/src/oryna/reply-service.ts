@@ -1,12 +1,13 @@
-import { appendFileSync } from "fs"
+const REPLY_URL = process.env.ORYNA_GATE_REPLY_URL + "/reply"
 
-const FILE = `/tmp/oryna-reply-${process.pid}`
+export async function sendReply(content: string, to?: string) {
+  if (!content) return
 
-export function sendReply(content: string, to?: string) {
-  const args: Record<string, string> = { content }
-  if (to) args.to = to
-  appendFileSync(
-    FILE,
-    JSON.stringify({ cmd: "reply", args: JSON.stringify(args) }) + "\n",
-  )
+  if (REPLY_URL) {
+    fetch(REPLY_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content, to: to ?? "" }),
+    }).catch(() => {})
+  }
 }

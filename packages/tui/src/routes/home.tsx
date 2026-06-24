@@ -50,10 +50,9 @@ export function Home() {
   createEffect(() => {
     const model = local.model.current()
     const isOrynaGate = model?.providerID === "orynagate"
-    if (isOrynaGate && !lastWasOrynaGate) {
-      startAgent()
-    } else if (!isOrynaGate && lastWasOrynaGate) {
-      stopAgent()
+    if (process.env.OPENCODE_CLIENT !== "desktop") {
+      if (isOrynaGate && !lastWasOrynaGate) startAgent()
+      else if (!isOrynaGate && lastWasOrynaGate) stopAgent()
     }
     lastWasOrynaGate = isOrynaGate
   })

@@ -88,6 +88,7 @@ export const SessionPaths = {
   remove: `${root}/:sessionID`,
   update: `${root}/:sessionID`,
   fork: `${root}/:sessionID/fork`,
+  focus: `${root}/:sessionID/focus`,
   abort: `${root}/:sessionID/abort`,
   share: `${root}/:sessionID/share`,
   init: `${root}/:sessionID/init`,
@@ -248,6 +249,18 @@ export const SessionApi = HttpApi.make("session")
             identifier: "session.fork",
             summary: "Fork session",
             description: "Create a new session by forking an existing session at a specific message point.",
+          }),
+        ),
+        HttpApiEndpoint.post("focus", SessionPaths.focus, {
+          params: { sessionID: SessionID },
+          query: WorkspaceRoutingQuery,
+          success: described(Schema.Boolean, "Session focused"),
+          error: [HttpApiError.BadRequest, ApiNotFoundError],
+        }).annotateMerge(
+          OpenApi.annotations({
+            identifier: "session.focus",
+            summary: "Focus session",
+            description: "Navigate the TUI to the specified session via SSE event.",
           }),
         ),
         HttpApiEndpoint.post("abort", SessionPaths.abort, {

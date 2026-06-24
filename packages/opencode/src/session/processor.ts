@@ -917,7 +917,7 @@ export const layer = Layer.effect(
 
         const msgs = yield* session.messages({ sessionID: ctx.sessionID }).pipe(Effect.orDie)
         const lastUser = msgs.findLast((m) => m.info.role === "user")
-        const collabMatch = (lastUser?.info as any)?.system?.match(/orynagate:from=(\S+)/)
+        const collabMatch = (lastUser?.info as any)?.system?.match(/collab:from=(\S+)/)
         if (collabMatch) {
           const userParts = lastUser?.parts ?? []
           const alreadyReplied = userParts.some((p) => p.type === "text" && (p as any).text?.includes("✓ Replied"))

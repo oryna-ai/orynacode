@@ -14,7 +14,6 @@ import { useTerminalDimensions } from "@opentui/solid"
 import { useTuiConfig } from "../config"
 import { HomeSessionDestinationProvider } from "./home/session-destination"
 import { agentStatus } from "../context/agent"
-import { start as startAgent, stop as stopAgent, setReady } from "orynacode-ai/oryna/agent"
 
 let once = false
 const placeholder = {
@@ -43,18 +42,6 @@ export function Home() {
 
   onMount(() => {
     editor.clearSelection()
-    setReady(false)
-  })
-
-  let lastWasOrynaGate = false
-  createEffect(() => {
-    const model = local.model.current()
-    const isOrynaGate = model?.providerID === "orynagate"
-    if (process.env.OPENCODE_CLIENT !== "desktop") {
-      if (isOrynaGate && !lastWasOrynaGate) startAgent()
-      else if (!isOrynaGate && lastWasOrynaGate) stopAgent()
-    }
-    lastWasOrynaGate = isOrynaGate
   })
 
   const bind = (r: PromptRef | undefined) => {

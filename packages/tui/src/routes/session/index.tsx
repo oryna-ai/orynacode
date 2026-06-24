@@ -74,7 +74,6 @@ import { setPreLayoutSiblingMargin } from "../../util/layout"
 import { useTuiConfig } from "../../config"
 import { useClipboard } from "../../context/clipboard"
 import { agentStatus } from "../../context/agent"
-import { start as startAgent, setMessageHandler, stop as stopAgent, setReady } from "orynacode-ai/oryna/agent"
 import { nextThinkingMode, reasoningSummary, useThinkingMode, type ThinkingMode } from "../../context/thinking"
 import { getScrollAcceleration } from "../../util/scroll"
 import { collapseToolOutput } from "../../util/collapse-tool-output"
@@ -200,8 +199,6 @@ export function Session() {
     setEpilogue(sessionEpilogue({ title, sessionID: session()?.id }))
   })
   onCleanup(() => setEpilogue())
-  setReady(true)
-  onCleanup(() => setReady(false))
   const children = createMemo(() => {
     const parentID = session()?.parentID ?? session()?.id
     return sync.data.session
@@ -1160,38 +1157,6 @@ export function Session() {
 
   // sync current session to Agent WebSocket
   createEffect(() => {
-    process.env.ORYNA_GATE_AGENT_SESSION_ID = route.sessionID || ""
-  })
-
-  // register message handler once
-  setMessageHandler(async (content: string, from: string) => {
-    const sessionID = route.sessionID
-    if (!sessionID) return
-
-    if (content.startsWith("/build ")) {
-      local.agent.set("build")
-      content = content.slice(7)
-    } else if (content.startsWith("/plan ")) {
-      local.agent.set("plan")
-      content = content.slice(6)
-    }
-
-    const model = local.model.current()
-    const agent = local.agent.current()
-    const agentName = agent?.name ?? "build"
-    await sdk.client.session.prompt({
-      sessionID,
-      agent: agent?.name,
-      system: `*** You are responding to a collaboration message. Reply with your findings and results. Your response will be sent back automatically. ***\n<!-- orynagate:from=${from} -->`,
-      parts: [{
-        type: "text",
-        text: `[Collaboration from ${from}, mode: ${agentName}]\n${content}`,
-      }],
-      ...(model ? { model: { providerID: model.providerID, modelID: model.modelID } } : {}),
-    })
-  })
-
-  createEffect(() => {
     const msgs = (sync.data.message[route.sessionID] as any[]) ?? []
     const lastUser = msgs.findLast((m: any) => m.role === "user")
     if (!lastUser?.system) return
@@ -1200,22 +1165,6 @@ export function Session() {
     if (local.agent.current()?.name !== m[1]) {
       local.agent.set(m[1])
     }
-  })
-
-  // connect/disconnect WS based on selected model
-  let lastWasOrynaGate = false
-  createEffect(() => {
-    const model = local.model.current()
-    const isOrynaGate = model?.providerID === "orynagate"
-    if (process.env.OPENCODE_CLIENT !== "desktop") {
-      if (isOrynaGate && !lastWasOrynaGate) {
-        process.env.ORYNA_GATE_WORKSPACE = session()?.directory || process.cwd()
-        startAgent()
-      } else if (!isOrynaGate && lastWasOrynaGate) {
-        stopAgent()
-      }
-    }
-    lastWasOrynaGate = isOrynaGate
   })
 
   const needsReAuth = createMemo(() => {

@@ -14,7 +14,6 @@ import { useToast } from "../ui/toast"
 import { isConsoleManagedProvider } from "../util/provider-origin"
 import { useConnected } from "./use-connected"
 import { scanLan } from "orynacode-ai/util/lan-scan"
-import { start as startAgent } from "orynacode-ai/oryna/agent"
 import { Spinner } from "./spinner"
 import open from "open"
 import os from "node:os"
@@ -601,7 +600,6 @@ function ConnectLocal(props: { onClose: () => void }) {
     })
     await sdk.client.instance.dispose()
     await sync.bootstrap()
-    startAgent()
     dialog.replace(() => <DialogModel providerID="orynagate" />)
   }
 

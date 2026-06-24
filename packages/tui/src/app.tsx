@@ -37,7 +37,7 @@ import { SyncProviderV2 } from "./context/sync-v2"
 import { LocalProvider, useLocal } from "./context/local"
 import { DialogModel } from "./component/dialog-model"
 import { useConnected } from "./component/use-connected"
-import { start as startAgent } from "orynacode-ai/oryna/agent"
+
 import { DialogMcp } from "./component/dialog-mcp"
 import { DialogStatus } from "./component/dialog-status"
 import { DialogThemeList } from "./component/dialog-theme-list"
@@ -229,7 +229,6 @@ export const run = Effect.fn("Tui.run")(function* (input: TuiInput) {
         if (renderer.isDestroyed) return
 
         process.env.ORYNA_GATE_WORKSPACE = input.directory || process.cwd()
-        if (process.env.OPENCODE_CLIENT !== "desktop") startAgent()
 
         await render(() => {
           return (

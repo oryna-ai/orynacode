@@ -7,6 +7,6 @@ export type AgentState = {
   url: string
 }
 
-export const [agentStatus, setAgentStatus] = createRoot(() =>
-  createSignal<AgentState>({ connected: false, processing: false, ready: false, url: "" }),
+export const agentStatus = createRoot(() =>
+  createSignal<AgentState>({ connected: false, processing: false, ready: false, url: "" })[0],
 )

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/package.json",
-  "version": "1.16.20",
+  "version": "1.16.21",
   "name": "orynacode-ai",
   "type": "module",
   "license": "MIT",

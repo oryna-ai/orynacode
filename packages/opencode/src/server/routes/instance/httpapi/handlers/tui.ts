@@ -113,7 +113,13 @@ export const tuiHandlers = HttpApiBuilder.group(InstanceHttpApi, "tui", (handler
       return true
     })
 
+    const navigateHome = Effect.fn("TuiHttpApi.navigateHome")(function* () {
+      yield* publishCommand("session.new")
+      return true
+    })
+
     return handlers
+      .handle("navigateHome", navigateHome)
       .handle("appendPrompt", appendPrompt)
       .handle("openHelp", openHelp)
       .handle("openSessions", openSessions)

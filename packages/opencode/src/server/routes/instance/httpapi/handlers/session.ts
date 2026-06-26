@@ -1,6 +1,6 @@
 import { PermissionV1 } from "@opencode-ai/core/v1/permission"
 import { Agent } from "@/agent/agent"
-import { GlobalBus } from "@/bus/global"
+import { TuiEvent } from "@/server/tui-event"
 import { SessionV1 } from "@opencode-ai/core/v1/session"
 import { EventV2Bridge } from "@/event-v2-bridge"
 import { Command } from "@/command"
@@ -414,16 +414,8 @@ export const sessionHandlers = HttpApiBuilder.group(InstanceHttpApi, "session", 
     const focus = Effect.fn("SessionHttpApi.focus")(function* (ctx: {
       params: { sessionID: SessionID }
     }) {
-      const info = yield* requireSession(ctx.params.sessionID)
-      yield* Effect.sync(() => {
-        GlobalBus.emit("event", {
-          directory: info.directory,
-          payload: {
-            type: "tui.session.select",
-            properties: { sessionID: ctx.params.sessionID },
-          },
-        })
-      })
+      yield* requireSession(ctx.params.sessionID)
+      yield* events.publish(TuiEvent.SessionSelect, { sessionID: ctx.params.sessionID })
       return true
     })
 

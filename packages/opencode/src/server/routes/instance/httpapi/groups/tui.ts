@@ -34,6 +34,7 @@ export const TuiPublishPayload = Schema.Union([
 ])
 
 export const TuiPaths = {
+  home: `${root}/home`,
   appendPrompt: `${root}/append-prompt`,
   openHelp: `${root}/open-help`,
   openSessions: `${root}/open-sessions`,
@@ -53,6 +54,16 @@ export const TuiApi = HttpApi.make("tui")
   .add(
     HttpApiGroup.make("tui")
       .add(
+        HttpApiEndpoint.post("navigateHome", TuiPaths.home, {
+          query: WorkspaceRoutingQuery,
+          success: described(Schema.Boolean, "Navigated to home"),
+        }).annotateMerge(
+          OpenApi.annotations({
+            identifier: "tui.navigateHome",
+            summary: "Navigate to home",
+            description: "Navigate the TUI to the home page.",
+          }),
+        ),
         HttpApiEndpoint.post("appendPrompt", TuiPaths.appendPrompt, {
           query: WorkspaceRoutingQuery,
           payload: TuiEvent.PromptAppend.data,

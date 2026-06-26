@@ -8192,6 +8192,68 @@ export type SessionForkResponses = {
 
 export type SessionForkResponse = SessionForkResponses[keyof SessionForkResponses]
 
+export type SessionFocusData = {
+  body?: never
+  path: {
+    sessionID: string
+  }
+  query?: {
+    directory?: string
+    workspace?: string
+  }
+  url: "/session/{sessionID}/focus"
+}
+
+export type SessionFocusErrors = {
+  /**
+   * BadRequest | InvalidRequestError
+   */
+  400: EffectHttpApiErrorBadRequest | InvalidRequestError
+  /**
+   * NotFoundError
+   */
+  404: NotFoundError
+}
+
+export type SessionFocusError = SessionFocusErrors[keyof SessionFocusErrors]
+
+export type SessionFocusResponses = {
+  /**
+   * Session focused
+   */
+  200: boolean
+}
+
+export type SessionFocusResponse = SessionFocusResponses[keyof SessionFocusResponses]
+
+export type SessionHomeData = {
+  body?: never
+  path?: never
+  query?: {
+    directory?: string
+    workspace?: string
+  }
+  url: "/session/home"
+}
+
+export type SessionHomeErrors = {
+  /**
+   * BadRequest | InvalidRequestError
+   */
+  400: EffectHttpApiErrorBadRequest | InvalidRequestError
+}
+
+export type SessionHomeError = SessionHomeErrors[keyof SessionHomeErrors]
+
+export type SessionHomeResponses = {
+  /**
+   * Navigated to home
+   */
+  200: boolean
+}
+
+export type SessionHomeResponse = SessionHomeResponses[keyof SessionHomeResponses]
+
 export type SessionAbortData = {
   body?: never
   path: {

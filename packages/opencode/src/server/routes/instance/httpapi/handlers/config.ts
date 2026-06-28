@@ -105,7 +105,7 @@ export const configHandlers = HttpApiBuilder.group(InstanceHttpApi, "config", (h
       const orynaIDs = new Set(["oryna", "orynagate"])
       const filtered: Record<string, any> = {}
       for (const [id, info] of Object.entries(allProviders)) {
-        if (orynaIDs.has(id)) filtered[id] = info
+        if (process.env.OPENCODE_CLIENT === "desktop" || orynaIDs.has(id)) filtered[id] = info
       }
 
       const localUrlRecover = process.env.ORYNA_GATE_URL

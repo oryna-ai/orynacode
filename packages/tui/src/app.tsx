@@ -346,7 +346,7 @@ function App(props: { onSnapshot?: () => Promise<string[]>; pluginHost: TuiPlugi
   const sdk = useSDK()
   const toast = useToast()
   const themeState = useTheme()
-  const { theme, mode, setMode, locked, lock, unlock } = themeState
+  const { theme, mode, setMode, locked, lock, unlock, set: setTheme } = themeState
   const sync = useSync()
   const project = useProject()
   const promptRef = usePromptRef()
@@ -956,6 +956,11 @@ function App(props: { onSnapshot?: () => Promise<string[]>; pluginHost: TuiPlugi
       type: "session",
       sessionID: evt.properties.sessionID,
     })
+  })
+
+  event.on("tui.theme.select", (evt, { workspace }) => {
+    if (workspace !== project.workspace.current()) return
+    setTheme(evt.properties.theme)
   })
 
   event.on("session.deleted", (evt) => {

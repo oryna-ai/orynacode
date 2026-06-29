@@ -26,11 +26,16 @@ const EventTuiSessionSelect = Schema.Struct({
   type: Schema.Literal(TuiEvent.SessionSelect.type),
   properties: TuiEvent.SessionSelect.data,
 }).annotate({ identifier: "EventTuiSessionSelect" })
+const EventTuiThemeSelect = Schema.Struct({
+  type: Schema.Literal(TuiEvent.ThemeSelect.type),
+  properties: TuiEvent.ThemeSelect.data,
+}).annotate({ identifier: "EventTuiThemeSelect" })
 export const TuiPublishPayload = Schema.Union([
   EventTuiPromptAppend,
   EventTuiCommandExecute,
   EventTuiToastShow,
   EventTuiSessionSelect,
+  EventTuiThemeSelect,
 ])
 
 export const TuiPaths = {
@@ -46,6 +51,7 @@ export const TuiPaths = {
   showToast: `${root}/show-toast`,
   publish: `${root}/publish`,
   selectSession: `${root}/select-session`,
+  selectTheme: `${root}/select-theme`,
   controlNext: `${root}/control/next`,
   controlResponse: `${root}/control/response`,
 } as const
@@ -181,6 +187,17 @@ export const TuiApi = HttpApi.make("tui")
             identifier: "tui.selectSession",
             summary: "Select session",
             description: "Navigate the TUI to display the specified session.",
+          }),
+        ),
+        HttpApiEndpoint.post("selectTheme", TuiPaths.selectTheme, {
+          query: WorkspaceRoutingQuery,
+          payload: TuiEvent.ThemeSelect.data,
+          success: described(Schema.Boolean, "Theme selected successfully"),
+        }).annotateMerge(
+          OpenApi.annotations({
+            identifier: "tui.selectTheme",
+            summary: "Select theme",
+            description: "Switch the TUI to the specified theme.",
           }),
         ),
         HttpApiEndpoint.get("controlNext", TuiPaths.controlNext, {

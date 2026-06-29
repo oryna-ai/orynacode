@@ -73,6 +73,7 @@ export type Event =
   | EventTuiCommandExecute2
   | EventTuiToastShow2
   | EventTuiSessionSelect2
+  | EventTuiThemeSelect2
   | EventMcpToolsChanged
   | EventMcpBrowserOpenFailed
   | EventCommandExecuted
@@ -1462,6 +1463,16 @@ export type GlobalEvent = {
       }
     | {
         id: string
+        type: "tui.theme.select"
+        properties: {
+          /**
+           * Theme name to switch to
+           */
+          theme: string
+        }
+      }
+    | {
+        id: string
         type: "mcp.tools.changed"
         properties: {
           server: string
@@ -2726,6 +2737,16 @@ export type EventTuiSessionSelect = {
   }
 }
 
+export type EventTuiThemeSelect = {
+  type: "tui.theme.select"
+  properties: {
+    /**
+     * Theme name to switch to
+     */
+    theme: string
+  }
+}
+
 export type Workspace = {
   id: string
   type: string
@@ -2863,6 +2884,17 @@ export type EventTuiSessionSelect2 = {
      * Session ID to navigate to
      */
     sessionID: string
+  }
+}
+
+export type EventTuiThemeSelect2 = {
+  id: string
+  type: "tui.theme.select"
+  properties: {
+    /**
+     * Theme name to switch to
+     */
+    theme: string
   }
 }
 
@@ -8226,34 +8258,6 @@ export type SessionFocusResponses = {
 
 export type SessionFocusResponse = SessionFocusResponses[keyof SessionFocusResponses]
 
-export type SessionHomeData = {
-  body?: never
-  path?: never
-  query?: {
-    directory?: string
-    workspace?: string
-  }
-  url: "/session/home"
-}
-
-export type SessionHomeErrors = {
-  /**
-   * BadRequest | InvalidRequestError
-   */
-  400: EffectHttpApiErrorBadRequest | InvalidRequestError
-}
-
-export type SessionHomeError = SessionHomeErrors[keyof SessionHomeErrors]
-
-export type SessionHomeResponses = {
-  /**
-   * Navigated to home
-   */
-  200: boolean
-}
-
-export type SessionHomeResponse = SessionHomeResponses[keyof SessionHomeResponses]
-
 export type SessionAbortData = {
   body?: never
   path: {
@@ -8913,6 +8917,34 @@ export type SyncHistoryListResponses = {
 
 export type SyncHistoryListResponse = SyncHistoryListResponses[keyof SyncHistoryListResponses]
 
+export type TuiNavigateHomeData = {
+  body?: never
+  path?: never
+  query?: {
+    directory?: string
+    workspace?: string
+  }
+  url: "/tui/home"
+}
+
+export type TuiNavigateHomeErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError
+}
+
+export type TuiNavigateHomeError = TuiNavigateHomeErrors[keyof TuiNavigateHomeErrors]
+
+export type TuiNavigateHomeResponses = {
+  /**
+   * Navigated to home
+   */
+  200: boolean
+}
+
+export type TuiNavigateHomeResponse = TuiNavigateHomeResponses[keyof TuiNavigateHomeResponses]
+
 export type TuiAppendPromptData = {
   body?: {
     text: string
@@ -9175,7 +9207,7 @@ export type TuiShowToastResponses = {
 export type TuiShowToastResponse = TuiShowToastResponses[keyof TuiShowToastResponses]
 
 export type TuiPublishData = {
-  body?: EventTuiPromptAppend | EventTuiCommandExecute | EventTuiToastShow | EventTuiSessionSelect
+  body?: EventTuiPromptAppend | EventTuiCommandExecute | EventTuiToastShow | EventTuiSessionSelect | EventTuiThemeSelect
   path?: never
   query?: {
     directory?: string
@@ -9238,6 +9270,39 @@ export type TuiSelectSessionResponses = {
 }
 
 export type TuiSelectSessionResponse = TuiSelectSessionResponses[keyof TuiSelectSessionResponses]
+
+export type TuiSelectThemeData = {
+  body?: {
+    /**
+     * Theme name to switch to
+     */
+    theme: string
+  }
+  path?: never
+  query?: {
+    directory?: string
+    workspace?: string
+  }
+  url: "/tui/select-theme"
+}
+
+export type TuiSelectThemeErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError
+}
+
+export type TuiSelectThemeError = TuiSelectThemeErrors[keyof TuiSelectThemeErrors]
+
+export type TuiSelectThemeResponses = {
+  /**
+   * Theme selected successfully
+   */
+  200: boolean
+}
+
+export type TuiSelectThemeResponse = TuiSelectThemeResponses[keyof TuiSelectThemeResponses]
 
 export type TuiControlNextData = {
   body?: never

@@ -50,4 +50,10 @@ export const TuiEvent = {
       sessionID: SessionID.annotate({ description: "Session ID to navigate to" }),
     },
   }),
+  ThemeSelect: EventV2.define({
+    type: "tui.theme.select",
+    schema: {
+      theme: Schema.String.annotate({ description: "Theme name to switch to" }),
+    },
+  }),
 }

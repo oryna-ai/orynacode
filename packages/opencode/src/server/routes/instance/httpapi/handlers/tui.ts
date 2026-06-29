@@ -104,6 +104,13 @@ export const tuiHandlers = HttpApiBuilder.group(InstanceHttpApi, "tui", (handler
       return true
     })
 
+    const selectTheme = Effect.fn("TuiHttpApi.selectTheme")(function* (ctx: {
+      payload: typeof TuiEvent.ThemeSelect.data.Type
+    }) {
+      yield* events.publish(TuiEvent.ThemeSelect, ctx.payload)
+      return true
+    })
+
     const controlNext = Effect.fn("TuiHttpApi.controlNext")(function* () {
       return yield* Effect.promise(() => nextTuiRequest())
     })
@@ -131,6 +138,7 @@ export const tuiHandlers = HttpApiBuilder.group(InstanceHttpApi, "tui", (handler
       .handle("showToast", showToast)
       .handle("publish", publish)
       .handle("selectSession", selectSession)
+      .handle("selectTheme", selectTheme)
       .handle("controlNext", controlNext)
       .handle("controlResponse", controlResponse)
   }),

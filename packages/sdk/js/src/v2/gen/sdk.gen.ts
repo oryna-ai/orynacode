@@ -28,6 +28,7 @@ import type {
   EventTuiCommandExecute,
   EventTuiPromptAppend,
   EventTuiSessionSelect,
+  EventTuiThemeSelect,
   EventTuiToastShow,
   ExperimentalConsoleGetErrors,
   ExperimentalConsoleGetResponses,
@@ -194,8 +195,6 @@ import type {
   SessionForkResponses,
   SessionGetErrors,
   SessionGetResponses,
-  SessionHomeErrors,
-  SessionHomeResponses,
   SessionInitErrors,
   SessionInitResponses,
   SessionListErrors,
@@ -250,6 +249,8 @@ import type {
   TuiControlResponseResponses,
   TuiExecuteCommandErrors,
   TuiExecuteCommandResponses,
+  TuiNavigateHomeErrors,
+  TuiNavigateHomeResponses,
   TuiOpenHelpErrors,
   TuiOpenHelpResponses,
   TuiOpenModelsErrors,
@@ -262,6 +263,8 @@ import type {
   TuiPublishResponses,
   TuiSelectSessionErrors,
   TuiSelectSessionResponses,
+  TuiSelectThemeErrors,
+  TuiSelectThemeResponses,
   TuiShowToastErrors,
   TuiShowToastResponses,
   TuiSubmitPromptErrors,
@@ -3950,36 +3953,6 @@ export class Session2 extends HeyApiClient {
   }
 
   /**
-   * Navigate to home
-   *
-   * Navigate the TUI to the home page via SSE event.
-   */
-  public home<ThrowOnError extends boolean = false>(
-    parameters?: {
-      directory?: string
-      workspace?: string
-    },
-    options?: Options<never, ThrowOnError>,
-  ) {
-    const params = buildClientParams(
-      [parameters],
-      [
-        {
-          args: [
-            { in: "query", key: "directory" },
-            { in: "query", key: "workspace" },
-          ],
-        },
-      ],
-    )
-    return (options?.client ?? this.client).post<SessionHomeResponses, SessionHomeErrors, ThrowOnError>({
-      url: "/session/home",
-      ...options,
-      ...params,
-    })
-  }
-
-  /**
    * Abort session
    *
    * Abort an active session and stop any ongoing AI processing or command execution.
@@ -4719,6 +4692,36 @@ export class Control extends HeyApiClient {
 
 export class Tui extends HeyApiClient {
   /**
+   * Navigate to home
+   *
+   * Navigate the TUI to the home page.
+   */
+  public navigateHome<ThrowOnError extends boolean = false>(
+    parameters?: {
+      directory?: string
+      workspace?: string
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "query", key: "directory" },
+            { in: "query", key: "workspace" },
+          ],
+        },
+      ],
+    )
+    return (options?.client ?? this.client).post<TuiNavigateHomeResponses, TuiNavigateHomeErrors, ThrowOnError>({
+      url: "/tui/home",
+      ...options,
+      ...params,
+    })
+  }
+
+  /**
    * Append TUI prompt
    *
    * Append prompt to the TUI.
@@ -5024,7 +5027,12 @@ export class Tui extends HeyApiClient {
     parameters?: {
       directory?: string
       workspace?: string
-      body?: EventTuiPromptAppend | EventTuiCommandExecute | EventTuiToastShow | EventTuiSessionSelect
+      body?:
+        | EventTuiPromptAppend
+        | EventTuiCommandExecute
+        | EventTuiToastShow
+        | EventTuiSessionSelect
+        | EventTuiThemeSelect
     },
     options?: Options<never, ThrowOnError>,
   ) {
@@ -5079,6 +5087,43 @@ export class Tui extends HeyApiClient {
     )
     return (options?.client ?? this.client).post<TuiSelectSessionResponses, TuiSelectSessionErrors, ThrowOnError>({
       url: "/tui/select-session",
+      ...options,
+      ...params,
+      headers: {
+        "Content-Type": "application/json",
+        ...options?.headers,
+        ...params.headers,
+      },
+    })
+  }
+
+  /**
+   * Select theme
+   *
+   * Switch the TUI to the specified theme.
+   */
+  public selectTheme<ThrowOnError extends boolean = false>(
+    parameters?: {
+      directory?: string
+      workspace?: string
+      theme?: string
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "query", key: "directory" },
+            { in: "query", key: "workspace" },
+            { in: "body", key: "theme" },
+          ],
+        },
+      ],
+    )
+    return (options?.client ?? this.client).post<TuiSelectThemeResponses, TuiSelectThemeErrors, ThrowOnError>({
+      url: "/tui/select-theme",
       ...options,
       ...params,
       headers: {

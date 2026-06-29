@@ -231,6 +231,7 @@ export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
       })
 
       const currentModel = createMemo(() => {
+        if (process.env.OPENCODE_CLIENT === "desktop") return fallbackModel()
         const a = agent.current()
         return (
           getFirstValidModel(

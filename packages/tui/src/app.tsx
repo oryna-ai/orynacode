@@ -543,6 +543,7 @@ function App(props: { onSnapshot?: () => Promise<string[]>; pluginHost: TuiPlugi
         suggested: sync.data.session.length > 0,
         slashName: "sessions",
         slashAliases: ["resume", "continue"],
+        hidden: process.env.OPENCODE_CLIENT === "desktop",
         run: () => {
           dialog.replace(() => <DialogSessionList />)
         },
@@ -601,8 +602,8 @@ function App(props: { onSnapshot?: () => Promise<string[]>; pluginHost: TuiPlugi
         suggested: true,
         category: "Agent",
         slashName: "models",
-        // Bias /mo toward /models over /move without changing global fuzzy scoring.
         slashAliases: ["mo"],
+        hidden: process.env.OPENCODE_CLIENT === "desktop",
         run: () => {
           dialog.replace(() => <DialogModel />)
         },
@@ -657,6 +658,7 @@ function App(props: { onSnapshot?: () => Promise<string[]>; pluginHost: TuiPlugi
         title: "Toggle MCPs",
         category: "Agent",
         slashName: "mcps",
+        hidden: process.env.OPENCODE_CLIENT === "desktop",
         run: () => {
           dialog.replace(() => <DialogMcp />)
         },

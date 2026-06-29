@@ -512,6 +512,7 @@ export function Prompt(props: PromptProps) {
         name: "prompt.skills",
         category: "Prompt",
         slashName: "skills",
+        hidden: process.env.OPENCODE_CLIENT === "desktop",
         run: () => {
           dialog.replace(() => (
             <DialogSkill
